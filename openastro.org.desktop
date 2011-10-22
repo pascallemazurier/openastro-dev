@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Name=Open Source Astrology
+GenericName=Open Source Astrology
+Categories=Graphics;2DGraphics;GTK;
+Encoding=UTF-8
+Exec=/usr/bin/openastro.py
+Icon=/usr/share/openastro.org/icons/openastro.svg
+Name=OpenAstro.org
+StartupNotify=true
+Terminal=false
+Type=Application

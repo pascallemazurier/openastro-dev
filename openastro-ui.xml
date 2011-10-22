@@ -1,0 +1,64 @@
+<ui>
+    <menubar name="MenuBar">
+      <menu action="File">
+        <menuitem action="newChart"/>
+        <menuitem action="importXML"/>
+        <menuitem action="exportXML"/>      
+        <menu action="import">				
+				<menuitem action="importOroboros"/>
+				<menuitem action="importSkylendar"/>
+				<menuitem action="importAstrolog32"/>
+				<menuitem action="importZet8"/>
+        </menu>             
+        <menu action="export">
+				<menuitem action="exportPNG"/>
+				<menuitem action="exportJPG"/>
+				<menuitem action="exportSVG"/>
+        </menu>
+        <menu action="History"/>
+        <menuitem action="Print"/>
+        <menuitem action="Quit"/>
+      </menu>
+      <menu action="Event">
+			<menuitem action="EditEvent"/> 
+			<menuitem action="OpenDatabase"/> 
+			<menu action="QuickOpenDatabase"/>
+			<menuitem action="OpenDatabaseFamous"/> 
+      </menu>
+      <menu action="Settings">
+        <menuitem action="Planets"/>
+        <menuitem action="Aspects"/>
+        <menuitem action="Colors"/>
+        <menuitem action="Labels"/>
+        <menuitem action="Location"/>
+        <menuitem action="Configuration"/>
+      </menu>
+      <menu action="Special">
+        <menuitem action="Radix"/>
+        <menuitem action="Transit"/>
+        <menuitem action="Synastry"/>
+        <menuitem action="Composite"/>
+        <menuitem action="Combine"/>
+        <menuitem action="Solar"/>
+        <menuitem action="SecondaryProgression"/>
+      </menu>
+      <menu action="Tables">
+        <menuitem action="MonthlyTimeline"/>
+        <menuitem action="CuspAspects"/>
+      </menu>      
+      <menu action="ZoomRadio">
+      	<menuitem action="z80"/>
+			<menuitem action="z100"/>
+			<menuitem action="z150"/>
+			<menuitem action="z200"/>
+		</menu>
+      <menu action="Extra">
+        <menuitem action="exportDB"/>
+        <menuitem action="importDB"/>
+      </menu>		
+      <menu action="About">
+        <menuitem action="AboutInfo"/>
+        <menuitem action="AboutSupport"/>
+      </menu>
+    </menubar>
+</ui>

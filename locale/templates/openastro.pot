@@ -1,0 +1,875 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-06-03 21:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Pelle van der Scheer <pellesimon@gmail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Launchpad-Export-Date: 2009-11-12 09:28+0000\n"
+"X-Generator: Launchpad (build Unknown)\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: ./openastro.org/current/openastro.py:376
+msgid "biquintile"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "conjunction"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "opposition"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "quincunx"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "quintile"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "semi-sextile"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "semi-square"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "sesquiquadrate"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "sextile"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "square"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:376
+msgid "trine"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:496
+msgid "Cusp"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:497
+#: ./openastro.org/current/openastro.py:4360
+#: ./openastro.org/current/openastro.py:5274
+#: ./openastro.org/current/openastro.py:5411
+#: ./openastro.org/current/openastro.py:5776
+#: ./openastro.org/current/openastro.py:5779
+msgid "Longitude"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:498
+#: ./openastro.org/current/openastro.py:4356
+#: ./openastro.org/current/openastro.py:5274
+#: ./openastro.org/current/openastro.py:5410
+#: ./openastro.org/current/openastro.py:5775
+#: ./openastro.org/current/openastro.py:5779
+msgid "Latitude"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:499
+msgid "North"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:500
+msgid "East"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:501
+msgid "South"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:502
+msgid "West"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:503
+msgid "Apparent Geocentric"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:504
+msgid "True Geocentric"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:505
+msgid "Topocentric"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:506
+msgid "Heliocentric"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:507
+msgid "Fire"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:508
+#: ./openastro.org/current/openastro.py:586
+msgid "Earth"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:509
+msgid "Air"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:510
+msgid "Water"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:511
+msgid "Radix"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:512
+msgid "Transit"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:513
+msgid "Synastry"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:514
+msgid "Composite"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:515
+msgid "Combine"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:516
+msgid "Solar"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:517
+#: ./openastro.org/current/openastro.py:2718
+msgid "Secondary Progressions"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:584
+msgid "Jupiter"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:584
+msgid "Mars"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:584
+msgid "Mercury"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:584
+msgid "Moon"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:584
+msgid "Saturn"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:584
+msgid "Sun"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:584
+msgid "Venus"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:585
+msgid "Lilith"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:585
+msgid "Neptune"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:585
+msgid "North Node"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:585
+msgid "Osc. Lilith"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:585
+msgid "Pluto"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:585
+msgid "Uranus"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:586
+msgid "Ceres"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:586
+msgid "Chiron"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:586
+msgid "Juno"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:586
+msgid "Pallas"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:586
+msgid "Pholus"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:586
+msgid "Vesta"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:587
+msgid "Asc"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:587
+msgid "Day Pars"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:587
+msgid "Dsc"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:587
+msgid "Ic"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:587
+msgid "Mc"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:588
+msgid "Marriage Pars"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:588
+msgid "Night Pars"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:588
+msgid "South Node"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:1147
+#: ./openastro.org/current/openastro.py:4515
+#: ./openastro.org/current/openastro.py:4525
+msgid "Here and Now"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2211
+msgid "Yot"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2281
+msgid "Planets in Transit"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2682
+msgid "Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2683
+msgid "Quit!"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2684
+msgid "History"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2685
+#: ./openastro.org/current/openastro.py:5357
+msgid "New Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2686
+msgid "Open Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2687
+msgid "Save Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2688
+msgid "Save as"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2689
+msgid "PNG Image"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2690
+msgid "SVG Image"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2691
+msgid "JPG Image"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2692
+msgid "Import"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2693
+msgid "Oroboros (*.xml)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2694
+msgid "Astrolog (*.dat)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2695
+msgid "Skylendar (*.skif)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2696
+msgid "Zet8 Dbase (*.zbs)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2697
+#: ./openastro.org/current/openastro.py:3431
+#: ./openastro.org/current/openastro.py:3605
+msgid "Print"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2698
+msgid "Event"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2699
+msgid "Edit Event"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2700
+msgid "Open Database"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2701
+msgid "Quick Open Database"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2702
+msgid "Open Famous People Database"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2703
+msgid "Settings"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2704
+msgid "Chart Type"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2705
+msgid "Zoom"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2706
+msgid "Planets & Angles"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2707
+msgid "Aspects"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2708
+msgid "Colors"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2709
+msgid "Labels"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2710
+msgid "Set Home Location"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2711
+msgid "Configuration"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2712
+msgid "Radix Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2713
+msgid "Transit Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2714
+msgid "Select for Synastry"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2714
+msgid "Synastry Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2715
+msgid "Composite Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2715
+msgid "Select for Composite"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2716
+msgid "Combine Chart"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2716
+msgid "Select for Combine"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2717
+msgid "Solar Return"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2719
+msgid "Tables"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2720
+msgid "Monthly Timeline"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2721
+msgid "Cusp Aspects"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2722
+msgid "Extra"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2723
+msgid "Export Database"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2724
+msgid "Import Database"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2725
+msgid "About"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2726
+msgid "Info"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2727
+msgid "Support"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2778
+#: ./openastro.org/current/openastro.py:2795
+msgid "OpenAstro.org Databases (*.sql)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2791
+msgid "Please select database to import"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2886
+msgid "PNG Image Files (*.png)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2891
+msgid "JPG Image Files (*.jpg)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2897
+msgid "SVG Image Files (*.svg)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2902
+#: ./openastro.org/current/openastro.py:2937
+msgid "OpenAstro Charts (*.oac)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2908
+msgid "All files (*)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2931
+msgid "Select file to open"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2941
+msgid "Oroboros Charts (*.xml)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2945
+msgid "Skylendar Charts (*.skif)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2948
+msgid "Astrolog32 Charts (*.dat)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:2951
+msgid "Zet8 Databases (*.zbs)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3011
+#: ./openastro.org/current/openastro.py:3024
+msgid "Select year for Solar Return"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3059
+msgid "Enter Date"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3072
+msgid "Select date for Secondary Progression"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3076
+#: ./openastro.org/current/openastro.py:3142
+#: ./openastro.org/current/openastro.py:5517
+msgid "Year"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3081
+#: ./openastro.org/current/openastro.py:3147
+#: ./openastro.org/current/openastro.py:5526
+msgid "Month"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3086
+msgid "Day"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3094
+#: ./openastro.org/current/openastro.py:5553
+msgid "Hour"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3099
+#: ./openastro.org/current/openastro.py:5562
+msgid "Min"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3132
+msgid "Select Month"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3172
+msgid "Select Export Filename"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3178
+msgid "PDF Files (*.pdf)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3434
+#: ./openastro.org/current/openastro.py:3608
+msgid "Save as PDF"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3627
+msgid "Author"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3627
+msgid "OpenAstro.org - Open Source Astrology"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3627
+msgid "Version"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3660
+msgid "Open Database Entry"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3671
+#: ./openastro.org/current/openastro.py:3779
+#: ./openastro.org/current/openastro.py:5394
+msgid "Name"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3672
+#: ./openastro.org/current/openastro.py:3780
+msgid "Birth Date (Local)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3673
+#: ./openastro.org/current/openastro.py:3781
+#: ./openastro.org/current/openastro.py:4352
+#: ./openastro.org/current/openastro.py:5274
+#: ./openastro.org/current/openastro.py:5412
+#: ./openastro.org/current/openastro.py:5774
+#: ./openastro.org/current/openastro.py:5779
+msgid "Location"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3732
+msgid "Search Name"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3736
+#: ./openastro.org/current/openastro.py:5505
+msgid "Search"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3739
+msgid "Reset"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3767
+msgid "Select Database Entry"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3942
+#: ./openastro.org/current/openastro.py:4005
+#: ./openastro.org/current/openastro.py:5795
+msgid "Question"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3945
+msgid "Are you sure you want to delete"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:3997
+#: ./openastro.org/current/openastro.py:5787
+msgid "Duplicate"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4001
+#: ./openastro.org/current/openastro.py:5791
+msgid "There is allready an entry for this name, please choose another"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4009
+msgid "Are you sure you want to Save?"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4160
+msgid "General Configuration"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4178
+msgid "Use Online Geocoding (ws.geonames.org)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4186
+msgid "Houses System"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4213
+msgid "Position Calculation"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4217
+msgid "(default)"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4232
+msgid "Chart View"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4235
+msgid "Planets in Zodiac"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4236
+msgid "Planets around Zodiac"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4248
+msgid "Language"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4251
+#: ./openastro.org/current/openastro.py:4843
+#: ./openastro.org/current/openastro.py:4869
+#: ./openastro.org/current/openastro.py:4888
+#: ./openastro.org/current/openastro.py:4906
+#: ./openastro.org/current/openastro.py:4924
+#: ./openastro.org/current/openastro.py:4950
+#: ./openastro.org/current/openastro.py:4977
+#: ./openastro.org/current/openastro.py:5003
+#: ./openastro.org/current/openastro.py:5119
+msgid "Default"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4340
+msgid "Please Set Your Home Location"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4368
+#: ./openastro.org/current/openastro.py:5420
+msgid "City"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4374
+#: ./openastro.org/current/openastro.py:5428
+msgid "Country-code"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4451
+#: ./openastro.org/current/openastro.py:5600
+msgid "Test"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4557
+msgid "Aspect Settings"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4570
+msgid "Deg"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4572
+msgid "Aspect Name"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4574
+msgid ""
+"Visible\n"
+"in Circle"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4576
+msgid ""
+"Visible\n"
+"in Grid"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4578
+msgid "Orb"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4678
+msgid "Planets & Angles Settings"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4692
+msgid "Planet Label"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4694
+#: ./openastro.org/current/openastro.py:4718
+msgid "Symbol"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4696
+#: ./openastro.org/current/openastro.py:4720
+msgid "Aspect Line"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4698
+#: ./openastro.org/current/openastro.py:4722
+msgid "Aspect Grid"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4714
+msgid "Point Label"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4716
+msgid "Angle Label"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4812
+msgid "Color Settings"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4830
+msgid "Zodiac Background Colors"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4855
+msgid "Circles and Lines Colors"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4862
+msgid "Radix Ring"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4881
+msgid "Transit Ring"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4899
+msgid "Cusp Radix"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4917
+msgid "Cusp Transit"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4936
+msgid "Zodiac Icon Colors"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4962
+msgid "Aspects Colors"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:4989
+msgid "Planet Colors"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5037
+msgid "Please select a color"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5088
+msgid "Label Settings"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5102
+msgid "Label"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5104
+msgid "Value"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5229
+msgid "City not found! Try Again."
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5300
+msgid "Quit"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5376
+msgid "Edit Event Details"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5499
+msgid "Search City"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5509
+msgid "For example: London, GB"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5591
+msgid "Save"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5595
+msgid "Add to Database"
+msgstr ""
+
+#: ./openastro.org/current/openastro.py:5799
+msgid "Are you sure you want to save this entry to the database?"
+msgstr ""
