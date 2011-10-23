@@ -17,6 +17,13 @@
     along with OpenAstro.org.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+#debug
+f=open('VERSION')
+VERSION=f.read()
+f.close()
+LOCAL=False
+DEBUG=True
+
 #basics
 import math, sys, os.path, datetime, socket, gettext, codecs, webbrowser
 
@@ -42,11 +49,6 @@ import rsvg
 
 #internal openastro modules
 from openastromod import zonetab, geoname, importfile, dignities, timeoutsocket, swiss as ephemeris
-
-#debug
-LOCAL=False
-DEBUG=False
-VERSION='1.1.25'
 
 #directories
 DATADIR=os.path.join(sys.prefix,'share','openastro.org')
