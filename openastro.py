@@ -57,26 +57,28 @@ TMPDIR='/tmp'
 #Translations
 LANGUAGES_LABEL={
 			"ar":"الْعَرَبيّة",
-			"pt_BR":"Português brasileiro",
 			"bg":"български език",
-#			"ca":"català",
+			"ca":"Català",
 			"cs":"čeština",
-			"da":"dansk",
-			"nl":"Nederlands",
-			"en":"English",
-			"fi":"suomi",
-			"fr":"Français",
+			"da":"Dansk",
 			"de":"Deutsch",
-			"nds":"Plattdüütsch",
 			"el":"ελληνικά",
-			"hu":"magyar nyelv",
-			"it":"Italiano",
-			"nb":"Bokmål",
-			"pl":"język polski",
-#			"rom":"rromani ćhib",
-			"ru":"Русский",
+			"en":"English",
 			"es":"Español",
-			"sv":"svenska"
+			"fi":"Suomi",
+			"fr":"Français",
+			"hu":"Magyar nyelv",
+			"it":"Italiano",
+			"ja":"日本",
+			"nb":"Bokmål",
+			"nds":"Plattdüütsch",
+			"nl":"Nederlands",
+			"pl":"Język polski",
+			"pt_BR":"Português brasileiro",
+			"rom":"Rromani ćhib",
+			"ru":"Русский",
+			"sv":"Svenska",
+			"ta":"தமிழ்"
 		}
 
 
