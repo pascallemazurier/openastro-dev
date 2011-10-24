@@ -78,9 +78,7 @@ LANGUAGES_LABEL={
 			"rom":"Rromani ćhib",
 			"ru":"Русский",
 			"sv":"Svenska",
-			"ta":"தமிழ்"
-		}
-
+			"ta":"தமிழ்"}
 
 if LOCAL:
 	TDomain = './locale'
@@ -101,7 +99,6 @@ try:
 except IOError:
 	print "OpenAstro.org has not yet been translated in your language! Could not load translation..."
 	TRANSLATION["default"] = gettext.translation("openastro",TDomain,languages=['en'])
-
 
 #config class
 class openAstroCfg:
@@ -144,17 +141,7 @@ class openAstroCfg:
 		self.peopledb = os.path.join(self.astrodir, 'peopledb.sql')
 		self.famousdb = os.path.join(cwd, 'famous.sql' )
 		return
-	
-	def checkSwissEphemeris(self,num):	
-		#00 = -01-600
-		#06 = 600 - 1200
-		#12 = 1200 - 1800
-		#18 = 1800 - 2400
-		#24 = 2400 - 3000
-		seas='ftp://ftp.astro.com/pub/swisseph/ephe/seas_12.se1'
-		semo='ftp://ftp.astro.com/pub/swisseph/ephe/semo_12.se1'
-		sepl='ftp://ftp.astro.com/pub/swisseph/ephe/sepl_12.se1'
-
+		
 #Sqlite database
 class openAstroSqlite:
 	def __init__(self):
@@ -274,7 +261,6 @@ class openAstroSqlite:
 		self.setLanguage(self.astrocfg['language'])
 		self.lang_label=LANGUAGES_LABEL
 
-
 		#fix inconsitencies between in people's database
 		if self.dbcheck:
 			sql='PRAGMA table_info(event_natal)'
@@ -294,7 +280,6 @@ class openAstroSqlite:
 				sql = "VACUUM"
 				self.pcursor.execute(sql)
 				dprint('dbcheck peopledb.event_natal: updating table definitions!')
-
 				
 		#check for history table in astrodb
 		if self.tables.has_key('history') == False:
@@ -559,8 +544,7 @@ class openAstroSqlite:
 			self.cursor.execute(sql)
 			self.dbcheck=True
 			dprint('creating sqlite table settings_planet in astrodb')
-		
-
+			
 		#default values for settings_planet (if dbcheck)
 		if self.dbcheck:
 			dprint('dbcheck astrodb.settings_planet')	
@@ -767,7 +751,6 @@ class openAstroSqlite:
 		self.close()
 		return dict
 		
-
 	def getDatabaseFamous(self,limit="2000",search=None):
 		self.flink = sqlite3.connect(cfg.famousdb)
 		self.flink.row_factory = sqlite3.Row
@@ -913,11 +896,7 @@ class openAstroSqlite:
 			self.history = self.cursor.fetchall()
 		return	
 	
-	"""
-	
-	Function to import zet8 databases
-
-	"""	
+	"""	Function to import zet8 databases """
 	
 	def importZet8(self, target_db, data):
 	
@@ -962,10 +941,7 @@ class openAstroSqlite:
 						
 		return
 	
-	"""
-	
-	Function to merge two databases containing entries for persons
-	databaseMerge(target_db,input_db)
+	"""	Function to merge two databases containing entries for persons - databaseMerge(target_db,input_db)
 	
 	database format:
 	'CREATE TABLE IF NOT EXISTS event_natal (id INTEGER PRIMARY KEY,name VARCHAR(50)\
@@ -1017,11 +993,8 @@ class openAstroSqlite:
 		input_con.close()
 		return
 	
-	"""
+	"""	Basic Query Functions for common databases	"""
 	
-	Basic Query Functions for common databases
-	
-	"""
 	def query(self, sql, tuple=None):
 		l=sqlite3.connect(cfg.astrodb)
 		c=l.cursor()
@@ -1415,7 +1388,6 @@ class openAstroInstance:
 							self.planets_degree[i] = self.planets_degree_ut[i] - deg_low
 							self.planets_retrograde[i] = False
 			
-		
 		#width and height from screen
 		ratio = float(self.screen_width) / float(self.screen_height)
 		if ratio < 1.3: #1280x1024
@@ -1444,7 +1416,6 @@ class openAstroInstance:
 			translateY= ( printing['height'] - sizeY ) * 0.5
 			translate = "%s,%s" % ( translateX , translateY )
 			
-		
 		#template dictionary		
 		td = dict()
 		r=240
@@ -1514,8 +1485,7 @@ class openAstroInstance:
 				"SASSANIAN":_("Sassanian"),
 				"J2000":_("J2000"),
 				"J1900":_("J1900"),
-				"B1950":_("B1950")
-				}
+				"B1950":_("B1950")}
 
 		if db.astrocfg['zodiactype'] == 'sidereal':
 			td['bottomLeft1']=_("Sidereal")
@@ -1968,7 +1938,6 @@ class openAstroInstance:
 					for f in range(xl-1):
 						planets_delta[groups[a][(f+1)][0]]=1.2*planet_drange+planets_delta[groups[a][f][0]]-groups[a][f][2]
 
-
 		for e in range(len(keys)):
 			i=planets_degut[keys[e]]
 
@@ -2041,7 +2010,6 @@ class openAstroInstance:
 			t_keys = t_planets_degut.keys()
 			t_keys.sort()
 			
-
 			#grab closely grouped planets
 			groups=[]
 			in_group=False
@@ -2118,7 +2086,6 @@ class openAstroInstance:
 				if 270 > rotate > 90:
 					rotate = rotate - 180.0
 					textanchor="start"
-	
 					
 				if textanchor == "end":
 					xo=1
@@ -2478,13 +2445,7 @@ class openAstroInstance:
 		out += '</g>\n'
 		return out
 	
-	"""Export/Import Functions related to openastro.org
-
-	def exportOAC(filename)
-	def importOAC(filename)
-	def importOroboros(filename)
-	
-	"""
+	"""Export/Import Functions related to openastro.org	(exportOAC(filename), importOAC(filename), importOroboros(filename)) """
 	
 	def exportOAC(self,filename):
 		template="""<?xml version='1.0' encoding='UTF-8'?>
@@ -2731,9 +2692,7 @@ class openAstroInstance:
 		f.close()
 		return
 		
-##############
-# MAIN CLASS #
-##############
+############### MAIN CLASS ###############
 
 #Main GTK Window
 class mainWindow:
@@ -2835,14 +2794,7 @@ class mainWindow:
 
 		return
 
-	"""
-
-	'Extra' Menu Items Functions
-	
-	extraExportDB
-	extraImportDB	
-		
-	"""
+	""" Extra Menu Items Functions (extraExportDB, extraImportDB) """
 	
 	def extraExportDB(self, widget):
 		chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -2879,12 +2831,8 @@ class mainWindow:
 					dprint('Dialog closed, no files selected')	
 		chooser.destroy()			
 
-	"""
+	"""	Function to check if we have an internet connection	for geonames.org geocoder """
 	
-	Function to check if we have an internet connection
-	for geonames.org geocoder
-
-	"""
 	def checkInternetConnection(self):
 	
 		if db.getAstrocfg('use_geonames.org') == "0":
@@ -2946,14 +2894,12 @@ class mainWindow:
 		self.draw.queue_draw()
 		self.draw.setSVG(self.tempfilename)
 		return
-
 		
 	def doExport(self, widget):
 
 		chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
                                   buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
 		chooser.set_current_folder(cfg.homedir)
-		
 		
 		filter = gtk.FileFilter()
 		if widget.get_name() == 'exportPNG':
@@ -3273,7 +3219,6 @@ class mainWindow:
 		elif res == gtk.PRINT_OPERATION_RESULT_APPLY:
 			settings = print_op.get_print_settings()
 
-
 	def tableMonthlyTimelinePrintBegin(self, operation, context, pages):
 		operation.set_n_pages(pages)
 		operation.set_use_full_page(False)
@@ -3302,8 +3247,7 @@ class mainWindow:
 			#draw svg for printing
 			rsvg.set_default_dpi(900)
 			svg = rsvg.Handle(cfg.tempfilenametableprint)
-			svg.render_cairo(cr)		
-
+			svg.render_cairo(cr)
 
 	def tableMonthlyTimelineShow(self, printing=None):
 		self.tabletype="timeline"
@@ -3468,7 +3412,6 @@ class mainWindow:
 			td['svgHeight'] = (td['svgWidth']/840.0)* pagesY
 			td['viewbox'] = "0 0 840 %s" %( pagesY ) 
 		
-
 		td['data'] = out
 		
 		#pages rectangles
@@ -3631,7 +3574,6 @@ class mainWindow:
 			
 		out += "</g>"
 			
-						
 		#template
 		td = {}
 		for i in range(len(openAstro.planets)):
@@ -3825,7 +3767,6 @@ class mainWindow:
 			button = gtk.Button(stock=gtk.STOCK_CLOSE)
 			button.connect("clicked", lambda w: self.win_OD.destroy())
 			hbox.pack_start(button,False)			
-			
 			
 		#display window
 		self.win_OD_treeview.connect("row-activated", lambda w,e,f: self.openDatabaseOpen(w))
@@ -4133,8 +4074,6 @@ class mainWindow:
 			
 		elif res == gtk.PRINT_OPERATION_RESULT_APPLY:
 			self.print_settings = print_op.get_print_settings()
-
-
 			
 		#gtkunixprint
 		import gtkunixprint
@@ -4154,7 +4093,6 @@ class mainWindow:
 			svg = rsvg.Handle(cfg.tempfilenameprint)
 			svg.render_cairo(context)
 			surface.finish()
-
 
 			#send file to print job
 			def printer_callback(print_job, data, errormsg):
@@ -4183,7 +4121,6 @@ class mainWindow:
 		else:
 			print "cancelled print"
 			gup.destroy()
-				
 
 	def doPrintBegin(self, operation, context):
 		operation.set_n_pages(1)
@@ -4217,16 +4154,8 @@ class mainWindow:
 		rsvg.set_default_dpi(900)
 		svg = rsvg.Handle(cfg.tempfilenameprint)
 		svg.render_cairo(cr)
-		
 	
-	"""
-	
-	Menu item for general configuration
-	
-	settingsConfiguration
-	settingsConfigurationSubmit	
-	
-	"""
+	"""	Menu item for general configuration	(settingsConfiguration,	settingsConfigurationSubmit) """
 	
 	def settingsConfiguration(self, widget):
 		# create a new window
@@ -4246,8 +4175,6 @@ class mainWindow:
 		table.set_col_spacings(0)
 		table.set_row_spacings(0)
 		table.set_border_width(10)
-		
-		#description
 
 		#options
 		table.attach(gtk.Label(_("Use Online Geocoding (ws.geonames.org)")), 0, 1, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
@@ -4319,7 +4246,6 @@ class mainWindow:
 				active = n
 		data['chartview'].set_active(active)
 
-
 		#zodiac type (tropical, sidereal)	
 		data['zodiactype'] = gtk.combo_box_new_text()
 		table.attach(gtk.Label(_('Zodiac Type')), 0, 1, 8, 9, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
@@ -4335,7 +4261,6 @@ class mainWindow:
 			if db.astrocfg['zodiactype'] == self.zodiactype_list[n]:
 				active = n
 		data['zodiactype'].set_active(active)
-
 		
 		#sidereal mode	
 		data['siderealmode'] = gtk.combo_box_new_text()
@@ -4480,17 +4405,7 @@ class mainWindow:
 		self.win_SC.destroy()
 		return
 
-		
-	"""
-	
-	Menu item to set home location:
-	
-	settingsLocation
-	settingsLocationSubmit
-	settingsLocationApply
-	settingsLocationDestroy
-	
-	"""
+	"""	Menu item to set home location	(settingsLocation, settingsLocationSubmit, settingsLocationApply, settingsLocationDestroy) """
 
 	def settingsLocation(self, widget):
 		# check connection to the internet
@@ -4704,14 +4619,7 @@ class mainWindow:
 		self.win_SL.destroy()
 		return
 
-	"""
-	
-	Menu item to set aspect options
-	
-	settingsAspects
-	settingsAspectsSubmit
-	
-	"""
+	"""	Menu item to set aspect options	(settingsAspects, settingsAspectsSubmit) """
 			
 	def settingsAspects(self, widget):
 		# create a new window
@@ -4825,14 +4733,7 @@ class mainWindow:
 		#destroy window
 		self.win_SA.destroy()
 	
-	"""
-	
-	Menu item to edit options for planets
-	
-	settingsPlanets
-	settingsPlanetsSubmit	
-	
-	"""	
+	"""	Menu item to edit options for planets (settingsPlanets,	settingsPlanetsSubmit) """
 		
 	def settingsPlanets(self, obj):
 		# create a new window
@@ -4950,15 +4851,7 @@ class mainWindow:
 		#destroy window
 		self.win_SP.destroy()
 
-
-	"""
-	
-	Menu item to set color options
-	
-	settingsColors
-	settingsColorsSubmit
-	
-	"""
+	""" Menu item to set color options (settingsColors,	settingsColorsSubmit) """
 	
 	def settingsColorsReset(self, widget, id):
 		self.SCdata[id]['code'].set_text(db.defaultColors[self.SCdata[id]['key']])
@@ -5210,7 +5103,6 @@ class mainWindow:
 			self.SCdata[count]["code"].set_text("#%02X%02X%02X"%(r,g,b))
 			self.SCdata[count]['code'].modify_base(gtk.STATE_NORMAL, output_color)
 		self.colorseldlg.hide()
-
 		return
 	
 	def settingsColorsSubmit(self, widget):
@@ -5229,16 +5121,7 @@ class mainWindow:
 		#destroy window
 		self.win_SC.destroy()
 
-
-
-	"""
-	
-	Menu item to edit options for label
-	
-	settingsLabel
-	settingsLabelSubmit	
-	
-	"""
+	"""	Menu item to edit options for label	(settingsLabel,	settingsLabelSubmit) """
 		
 	def settingsLabelReset(self, widget, id):
 		self.SLdata[id]['value'].set_text(db.defaultLabel[self.SLdata[id]['name']])
@@ -5323,12 +5206,7 @@ class mainWindow:
 		#destroy window
 		self.win_SL.destroy()
 
-
-	"""
-		
-		Update the chart with input list data
-
-	"""
+	""" Update the chart with input list data """
 
 	def updateChartList(self, b, list):
 		openAstro.type="Radix"
@@ -5500,7 +5378,6 @@ class mainWindow:
 		self.uimanager.insert_action_group(self.actiongroup, 0)		
 		self.uimanager.ensure_update()
 		
-
 	def eventDataNew(self, widget):
 		#default location
 		openAstro.location=openAstro.home_location
@@ -5779,7 +5656,6 @@ class mainWindow:
 		self.window2.show_all()
 		return
 
-
 	def citySearch(self, widget):
 		
 		#text entry
@@ -5842,8 +5718,7 @@ class mainWindow:
 			self.citybox.set_active(self.searchcity[result["geonameid"]])
 			
 		return
-
-    
+	
 	def eventDataChangedContbox(self, combobox):
 		model = combobox.get_model()
 		index = combobox.get_active()
@@ -5940,7 +5815,6 @@ class mainWindow:
 		else:		
 			self.entry2.set_text(' %s: %s\n %s: %s\n %s: %s' % (
 				_('Latitude'),self.GEON_lat,_('Longitude'),self.GEON_lon,_('Location'),self.GEON_loc) )
-
 	
 	def eventDataSaveAsk(self, widget):
 		#check for duplicate name	
@@ -6026,7 +5900,6 @@ class mainWindow:
 		dprint('Quitting program')
 		gtk.main_quit()
 
-
 #cairo svg class
 class drawSVG(gtk.DrawingArea):
 	def __init__(self):
@@ -6055,24 +5928,20 @@ class drawSVG(gtk.DrawingArea):
 				
 			self.svg.render_cairo(context)
 
-
 #debug print function
 def dprint(str):
 	if "--debug" in sys.argv or DEBUG:
 		print '%s' % str
 
 #gtk main
-
 def main():
     gtk.main()
     return 0
 
 #start the whole bunch
-
 if __name__ == "__main__":
 	cfg = openAstroCfg()
 	db = openAstroSqlite()
-	openAstro = openAstroInstance()	
+	openAstro = openAstroInstance()
 	mainWindow()
 	main()
-
