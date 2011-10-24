@@ -2,7 +2,7 @@
 Encoding=UTF-8
 Name=OpenAstro.org
 Comment=Open Source Astrology
-Exec=openastro.py
+Exec=/usr/bin/openastro.py
 Icon=/usr/share/openastro.org/icons/openastro.svg
 Type=Application
 Categories=Graphics;2DGraphics;GTK;

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
     This file is part of openastro.org.
@@ -93,7 +93,7 @@ for i in range(len(LANGUAGES)):
 	try:
 		TRANSLATION[LANGUAGES[i]] = gettext.translation("openastro",TDomain,languages=[LANGUAGES[i]])
 	except IOError:
-		print "IOError! Invalid languages specified (%s) in %s" %(LANGUAGES[i],TDomain)
+		print "IOError! Invalid languages specified (%s) in %s %(LANGUAGES[i],TDomain)"
 		TRANSLATION[LANGUAGES[i]] = gettext.translation("openastro",TDomain,languages=['en'])
 		
 try:
