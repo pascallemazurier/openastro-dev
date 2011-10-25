@@ -18,9 +18,7 @@
 """
 
 #debug
-f=open('VERSION')
-VERSION=f.read()
-f.close()
+VERSION=1.1.25
 LOCAL=False
 DEBUG=True
 
