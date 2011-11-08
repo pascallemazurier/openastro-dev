@@ -29,7 +29,6 @@
         <menuitem action="Planets"/>
         <menuitem action="Aspects"/>
         <menuitem action="Colors"/>
-        <menuitem action="Labels"/>
         <menuitem action="Location"/>
         <menuitem action="Configuration"/>
       </menu>

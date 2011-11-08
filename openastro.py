@@ -3031,7 +3031,7 @@ class mainWindow:
 		self.win_SS.connect("delete_event", lambda w,e: self.win_SS.destroy())
 		self.win_SS.move(150,150)
 		self.win_SS.set_border_width(5)
-		self.win_SS.set_size_request(300,100)
+		self.win_SS.set_size_request(400,100)
 		
 		#create a table
 		table = gtk.Table(2, 1, False)
@@ -3079,7 +3079,7 @@ class mainWindow:
 		self.win_SSP.connect("delete_event", lambda w,e: self.win_SSP.destroy())
 		self.win_SSP.move(150,150)
 		self.win_SSP.set_border_width(5)
-		self.win_SSP.set_size_request(320,180)
+		self.win_SSP.set_size_request(350,180)
 		
 		#create a table
 		table = gtk.Table(1, 4, False)
@@ -4153,38 +4153,37 @@ class mainWindow:
 		svg = rsvg.Handle(cfg.tempfilenameprint)
 		svg.render_cairo(cr)
 	
-	"""	Menu item for general configuration	(settingsConfiguration,	settingsConfigurationSubmit) """
-	
+	"""	Menu item for general configuration	(settingsConfiguration,	settingsConfigurationSubmit) """	
 	def settingsConfiguration(self, widget):
 		# create a new window
 		self.win_SC = gtk.Dialog()
 		self.win_SC.set_icon_from_file(cfg.iconWindow)
 		self.win_SC.set_title(_("General Configuration"))
 		self.win_SC.connect("delete_event", lambda w,e: self.win_SC.destroy())
-		self.win_SC.move(200,150)
+		self.win_SC.move(150,150)
 		self.win_SC.set_border_width(5)
-		self.win_SC.set_size_request(450,450)
+		self.win_SC.set_size_request(550,350)
 		
 		#data dictionary
 		data = {}
 		
 		#create a table
-		table = gtk.Table(8, 1, False)
+		table = gtk.Table(8, 2, False)
 		table.set_col_spacings(0)
 		table.set_row_spacings(0)
 		table.set_border_width(10)
 
-		#options
-		table.attach(gtk.Label(_("Use Online Geocoding (ws.geonames.org)")), 0, 1, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
+		#use online geocoding option
+		table.attach(gtk.Label(_("Use Online Geocoding\n(ws.geonames.org)")), 0, 1, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
 		data['use_geonames.org'] = gtk.CheckButton()
-		table.attach(data['use_geonames.org'], 0, 1, 1, 2, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['use_geonames.org'], 1, 2, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
 		if db.getAstrocfg('use_geonames.org') == "1":
 			data['use_geonames.org'].set_active(True)
 		
 		#house system
 		data['houses_system'] = gtk.combo_box_new_text()
 		table.attach(gtk.Label(_('Houses System')), 0, 1, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['houses_system'], 0, 1, 3, 4, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['houses_system'], 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
 		hsys={
 				"P":"Placidus",
 				"K":"Koch",
@@ -4212,7 +4211,7 @@ class mainWindow:
 		#position calculation (geo,truegeo,topo,helio)		
 		data['postype'] = gtk.combo_box_new_text()
 		table.attach(gtk.Label(_('Position Calculation')), 0, 1, 4, 5, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['postype'], 0, 1, 5, 6, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['postype'], 1, 2, 4, 5, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
 		postype={
 		
 				"geo":openAstro.label["apparent_geocentric"]+" "+_("(default)"),
@@ -4231,7 +4230,7 @@ class mainWindow:
 		#chart view (traditional,european)		
 		data['chartview'] = gtk.combo_box_new_text()
 		table.attach(gtk.Label(_('Chart View')), 0, 1, 6, 7, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['chartview'], 0, 1, 7, 8, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['chartview'], 1, 2, 6, 7, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
 		chartview={
 				"traditional":_("Planets in Zodiac"),
 				"european":_("Planets around Zodiac")
@@ -4247,7 +4246,7 @@ class mainWindow:
 		#zodiac type (tropical, sidereal)	
 		data['zodiactype'] = gtk.combo_box_new_text()
 		table.attach(gtk.Label(_('Zodiac Type')), 0, 1, 8, 9, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['zodiactype'], 0, 1, 10, 11, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['zodiactype'], 1, 2, 8, 9, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
 		chartview={
 				"tropical":_("Tropical"),
 				"sidereal":_("Sidereal")
@@ -4271,7 +4270,7 @@ class mainWindow:
 				data['siderealmode'].set_sensitive(True)
 		data['zodiactype'].connect("changed",zodiactype_changed)
 		table.attach(gtk.Label(_('Sidereal Mode')), 0, 1, 12, 13, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['siderealmode'], 0, 1, 14, 15, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['siderealmode'], 1, 2, 12, 13, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
 		self.siderealmode_chartview={
 				"FAGAN_BRADLEY":_("Fagan Bradley"),
 				"LAHIRI":_("Lahiri"),
@@ -4324,7 +4323,7 @@ class mainWindow:
 		#language		
 		data['language'] = gtk.combo_box_new_text()
 		table.attach(gtk.Label(_('Language')), 0, 1, 16, 17, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
-		table.attach(data['language'], 0, 1, 18, 19, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['language'], 1, 2, 16, 17, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
 		
 		data['language'].append_text(_("Default"))
 		active=0
@@ -4337,7 +4336,7 @@ class mainWindow:
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		self.win_SC.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
@@ -4618,7 +4617,6 @@ class mainWindow:
 		return
 
 	"""	Menu item to set aspect options	(settingsAspects, settingsAspectsSubmit) """
-			
 	def settingsAspects(self, widget):
 		# create a new window
 		self.win_SA = gtk.Dialog()
@@ -4627,7 +4625,7 @@ class mainWindow:
 		self.win_SA.connect("delete_event", lambda w,e: self.win_SA.destroy())
 		self.win_SA.move(150,150)
 		self.win_SA.set_border_width(5)
-		self.win_SA.set_size_request(550,450)
+		self.win_SA.set_size_request(600,500)
 		
 		#create a table
 		table = gtk.Table(len(openAstro.aspects)-3, 6, False)
@@ -4681,7 +4679,7 @@ class mainWindow:
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		self.win_SA.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
@@ -4731,8 +4729,7 @@ class mainWindow:
 		#destroy window
 		self.win_SA.destroy()
 	
-	"""	Menu item to edit options for planets (settingsPlanets,	settingsPlanetsSubmit) """
-		
+	"""	Menu item to edit options for planets (settingsPlanets,	settingsPlanetsSubmit) """	
 	def settingsPlanets(self, obj):
 		# create a new window
 		self.win_SP = gtk.Dialog()
@@ -4741,7 +4738,7 @@ class mainWindow:
 		self.win_SP.connect("delete_event", lambda w,e: self.win_SP.destroy())
 		self.win_SP.move(150,150)
 		self.win_SP.set_border_width(5)
-		self.win_SP.set_size_request(470,450)
+		self.win_SP.set_size_request(600,600)
 		
 		#create a table
 		table = gtk.Table(len(openAstro.planets)-3, 4, False)
@@ -4811,7 +4808,7 @@ class mainWindow:
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		self.win_SP.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
@@ -4850,7 +4847,6 @@ class mainWindow:
 		self.win_SP.destroy()
 
 	""" Menu item to set color options (settingsColors,	settingsColorsSubmit) """
-	
 	def settingsColorsReset(self, widget, id):
 		self.SCdata[id]['code'].set_text(db.defaultColors[self.SCdata[id]['key']])
 		self.SCdata[id]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(db.defaultColors[self.SCdata[id]['key']]))
@@ -4867,7 +4863,7 @@ class mainWindow:
 		self.win_SC.connect("delete_event", lambda w,e: self.win_SC.destroy())
 		self.win_SC.move(150,150)
 		self.win_SC.set_border_width(5)
-		self.win_SC.set_size_request(470,450)
+		self.win_SC.set_size_request(600,600)
 		
 		#create a table
 		table = gtk.Table(24, 4, False)
@@ -5066,7 +5062,7 @@ class mainWindow:
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		self.win_SC.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
@@ -5120,7 +5116,6 @@ class mainWindow:
 		self.win_SC.destroy()
 
 	"""	Menu item to edit options for label	(settingsLabel,	settingsLabelSubmit) """
-		
 	def settingsLabelReset(self, widget, id):
 		self.SLdata[id]['value'].set_text(db.defaultLabel[self.SLdata[id]['name']])
 		return
@@ -5133,7 +5128,7 @@ class mainWindow:
 		self.win_SL.connect("delete_event", lambda w,e: self.win_SL.destroy())
 		self.win_SL.move(150,150)
 		self.win_SL.set_border_width(5)
-		self.win_SL.set_size_request(540,500)
+		self.win_SL.set_size_request(600,600)
 		
 		#create a table
 		table = gtk.Table(len(openAstro.label), 3, False)
@@ -5170,7 +5165,7 @@ class mainWindow:
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		self.win_SL.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
@@ -5931,15 +5926,10 @@ def dprint(str):
 	if "--debug" in sys.argv or DEBUG:
 		print '%s' % str
 
-#gtk main
-def main():
-    gtk.main()
-    return 0
-
 #start the whole bunch
 if __name__ == "__main__":
 	cfg = openAstroCfg()
 	db = openAstroSqlite()
 	openAstro = openAstroInstance()
 	mainWindow()
-	main()
+gtk.main()
