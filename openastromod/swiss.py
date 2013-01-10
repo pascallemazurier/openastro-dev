@@ -32,18 +32,18 @@ import swisseph as swe
 class ephData:
 	def __init__(self,year,month,day,hour,geolon,geolat,altitude,planets,zodiac,openastrocfg,houses_override=None):
 		#ephemeris path (default "/usr/share/swisseph:/usr/local/share/swisseph")
-		swe.set_ephe_path(ephe_path)
+		#swe.set_ephe_path(ephe_path)
 		
 		#basic location		
 		self.jul_day_UT=swe.julday(year,month,day,hour)
 		self.geo_loc = swe.set_topo(geolon,geolat,altitude)
 
 		#output variables
-		self.planets_sign = range(len(planets))
-		self.planets_degree = range(len(planets))
-		self.planets_degree_ut = range(len(planets))
-		self.planets_info_string = range(len(planets))
-		self.planets_retrograde = range(len(planets))
+		self.planets_sign = list(range(len(planets)))
+		self.planets_degree = list(range(len(planets)))
+		self.planets_degree_ut = list(range(len(planets)))
+		self.planets_info_string = list(range(len(planets)))
+		self.planets_retrograde = list(range(len(planets)))
 		
 		#iflag
 		"""
@@ -121,18 +121,18 @@ class ephData:
 			
 		if geolat > 66.0:
 			geolat = 66.0
-			print "polar circle override for houses, using 66 degrees"
+			print("polar circle override for houses, using 66 degrees")
 		elif geolat < -66.0:
 			geolat = -66.0
-			print "polar circle override for houses, using -66 degrees"
+			print("polar circle override for houses, using -66 degrees")
 		#sidereal houses
 		if(openastrocfg['zodiactype']=="sidereal"):
 			sh = swe.houses_ex(self.jul_day_UT,geolat,geolon,openastrocfg['houses_system'].encode("ascii"),swe.FLG_SIDEREAL)
 		else:
 			sh = swe.houses(self.jul_day_UT,geolat,geolon,openastrocfg['houses_system'].encode("ascii"))
 		self.houses_degree_ut = list(sh[0])
-		self.houses_degree = range(len(self.houses_degree_ut))
-		self.houses_sign = range(len(self.houses_degree_ut))
+		self.houses_degree = list(range(len(self.houses_degree_ut)))
+		self.houses_sign = list(range(len(self.houses_degree_ut)))
 		for i in range(12):
 			for x in range(len(zodiac)):
 				deg_low=float(x*30)

@@ -25,7 +25,7 @@ width="$svgWidth" height="$svgHeight" viewBox="$viewbox" >
 <title>Esoteric OpenAstro</title>
 <g transform="scale(1)">
 $pagesRect
-<text x="20" y="30" style="fill: #000; font-size: 20">$stringTitle</text>
+<text x="20" y="30" style="fill: $paper_color_0; font-size: 20">$stringTitle</text>
 
 <!-- Planets (24x24) -->
 

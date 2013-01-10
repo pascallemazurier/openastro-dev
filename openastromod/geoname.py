@@ -26,12 +26,12 @@ preset vars:
 	maxRows=1
 """
 
-from urllib2 import urlopen
-from urllib import urlencode
+from urllib.request import urlopen
+from urllib.parse import urlencode
 from xml.dom.minidom import parseString
 
 try:
-    import timeoutsocket # http://www.timo-tasi.org/python/timeoutsocket.py
+    from . import timeoutsocket # http://www.timo-tasi.org/python/timeoutsocket.py
     timeoutsocket.setDefaultSocketTimeout(20)
 except ImportError:
     pass
@@ -54,7 +54,7 @@ def search(name='',country=''):
 	"""
 	#check name
 	if name == '':
-		print 'No name specified!'
+		print('No name specified!')
 		return None
 		
 	#open connection and read xml
@@ -63,7 +63,7 @@ def search(name='',country=''):
 	try:
 		f = urlopen("http://ws.geonames.org/search?%s" % params)
 	except timeoutsocket.Timeout:
-		print 'Timeout on search!'
+		print('Timeout on search!')
 		return None
 	
 	data = f.read()
@@ -89,7 +89,7 @@ def search(name='',country=''):
 		try:
 			f = urlopen("http://ws.geonames.org/timezone?%s" % tparams)
 		except timeoutsocket.Timeout:
-			print 'Timeout on timezone search!'
+			print('Timeout on timezone search!')
 			return None
 		data = f.read()
 		tdom = parseString(data)
@@ -100,7 +100,7 @@ def search(name='',country=''):
 	
 	#return results
 	if totalResultsCount == "0":
-		print "No results!"
+		print("No results!")
 		return None
 	else:
 		return geoname

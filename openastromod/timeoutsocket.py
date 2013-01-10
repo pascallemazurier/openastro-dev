@@ -189,7 +189,7 @@ class TimeoutSocket:
         errcode = 0
         try:
             self.connect(addr)
-        except Error, why:
+        except Error as why:
             errcode = why[0]
         return errcode
     # end connect_ex
@@ -209,7 +209,7 @@ class TimeoutSocket:
             sock.connect(addr)
             sock.setblocking(blocking)
             return
-        except Error, why:
+        except Error as why:
             # Set the socket's blocking mode back
             sock.setblocking(blocking)
             
@@ -255,7 +255,7 @@ class TimeoutSocket:
             timeoutnewsock = self.__class__(newsock, timeout)
             timeoutnewsock.setblocking(blocking)
             return (timeoutnewsock, addr)
-        except Error, why:
+        except Error as why:
             # Set the socket's blocking mode back
             sock.setblocking(blocking)
 

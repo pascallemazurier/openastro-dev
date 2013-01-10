@@ -1,30 +1,30 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-    This file is part of openastro.org.
+	This file is part of openastro.org.
 
-    OpenAstro.org is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	OpenAstro.org is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    OpenAstro.org is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	OpenAstro.org is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with OpenAstro.org.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with OpenAstro.org.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 #debug
-VERSION='1.1.25'
+VERSION='1.1.38'
 LOCAL=False
 DEBUG=True
 
 #basics
 import math, sys, os.path, datetime, socket, gettext, codecs, webbrowser
-
+import tempfile
 #copyfile
 from shutil import copyfile
 
@@ -39,18 +39,21 @@ from string import Template
 from xml.dom.minidom import parseString
 
 #GTK, cairo to display svg
-import pygtk
-pygtk.require('2.0')
-import gtk
+
+from gi.repository import Gtk as gtk
+from gi.repository import Gdk as gdk
+from gi.repository import Rsvg as rsvg
 import cairo
-import rsvg
 
 #internal openastro modules
 from openastromod import zonetab, geoname, importfile, dignities, timeoutsocket, swiss as ephemeris
 
 #directories
-DATADIR=os.path.join(sys.prefix,'share','openastro.org')
-TMPDIR='/tmp'
+if LOCAL:
+	DATADIR=os.path.dirname(__file__)
+else:
+	DATADIR=os.path.join(sys.prefix,'share','openastro.org')
+TMPDIR=tempfile.gettempdir()
 
 #Translations
 LANGUAGES_LABEL={
@@ -78,24 +81,29 @@ LANGUAGES_LABEL={
 			"sv":"Svenska",
 			"ta":"தமிழ்"}
 
+local_trans = os.path.join(sys.path[0],'locale')
+sys_trans = os.path.join(DATADIR,'locale')
 if LOCAL:
-	TDomain = './locale'
+	TDomain = local_trans
 else:
-	TDomain = os.path.join(DATADIR,'locale')
+	if os.path.exists(sys_trans):
+		TDomain = sys_trans
+	else:
+		TDomain = local_trans
 
-LANGUAGES=LANGUAGES_LABEL.keys()
+LANGUAGES=list(LANGUAGES_LABEL.keys())
 TRANSLATION={}
 for i in range(len(LANGUAGES)):
 	try:
 		TRANSLATION[LANGUAGES[i]] = gettext.translation("openastro",TDomain,languages=[LANGUAGES[i]])
 	except IOError:
-		print "IOError! Invalid languages specified (%s) in %s %(LANGUAGES[i],TDomain)"
+		print("IOError! Invalid languages specified ({}) in {}".format(LANGUAGES[i],TDomain))
 		TRANSLATION[LANGUAGES[i]] = gettext.translation("openastro",TDomain,languages=['en'])
 		
 try:
 	TRANSLATION["default"] = gettext.translation("openastro",TDomain)
 except IOError:
-	print "OpenAstro.org has not yet been translated in your language! Could not load translation..."
+	print("OpenAstro.org has not yet been translated in your language! Could not load translation...")
 	TRANSLATION["default"] = gettext.translation("openastro",TDomain,languages=['en'])
 
 #config class
@@ -197,17 +205,17 @@ class openAstroSqlite:
 			"timezonestr":"VARCHAR(100)",
 			"extra":"VARCHAR(500)"
 			}
-		if self.ptables.has_key('event_natal') == False:		
+		if ('event_natal' in self.ptables) == False:		
 			sql='CREATE TABLE IF NOT EXISTS event_natal (id INTEGER PRIMARY KEY,name VARCHAR(50)\
 				 ,year VARCHAR(4),month VARCHAR(2), day VARCHAR(2), hour VARCHAR(50), geolon VARCHAR(50)\
-			 	,geolat VARCHAR(50), altitude VARCHAR(50), location VARCHAR(150), timezone VARCHAR(50)\
-			 	,notes VARCHAR(500), image VARCHAR(250), countrycode VARCHAR(2), geonameid INTEGER\
-			 	,timezonestr VARCHAR(100), extra VARCHAR(250))'
+				 ,geolat VARCHAR(50), altitude VARCHAR(50), location VARCHAR(150), timezone VARCHAR(50)\
+				 ,notes VARCHAR(500), image VARCHAR(250), countrycode VARCHAR(2), geonameid INTEGER\
+				 ,timezonestr VARCHAR(100), extra VARCHAR(250))'
 			self.pcursor.execute(sql)
 			dprint('creating sqlite table event_natal in peopledb')
 		
 		#check for astrocfg table in astrodb
-		if self.tables.has_key('astrocfg') == False:
+		if ('astrocfg' in self.tables) == False:
 			#0=cfg_name, 1=cfg_value
 			sql='CREATE TABLE IF NOT EXISTS astrocfg (name VARCHAR(150) UNIQUE,value VARCHAR(150))'
 			self.cursor.execute(sql)
@@ -244,7 +252,7 @@ class openAstroSqlite:
 							"zodiactype":"tropical",
 							"siderealmode":"FAGAN_BRADLEY"
 						 }
-			for k, v in default.iteritems():
+			for k, v in default.items():
 				sql='INSERT OR %s INTO astrocfg (name,value) VALUES(?,?)' % (self.dbpurge)
 				self.cursor.execute(sql,(k,v))
 				
@@ -268,7 +276,7 @@ class openAstroSqlite:
 			cnames=[]
 			for i in range(len(list)):
 				cnames.append(list[i][1])
-			for key,val in self.ptable_event_natal.iteritems():
+			for key,val in self.ptable_event_natal.items():
 				if key not in cnames:
 					sql = 'ALTER TABLE event_natal ADD %s %s'%(key,val)
 					dprint("dbcheck peopledb.event_natal adding %s %s"%(key,val))					
@@ -280,12 +288,12 @@ class openAstroSqlite:
 				dprint('dbcheck peopledb.event_natal: updating table definitions!')
 				
 		#check for history table in astrodb
-		if self.tables.has_key('history') == False:
+		if ('history' in self.tables) == False:
 			#0=id,1=name,2=year,3=month,4=day,5=hour,6=geolon,7=geolat,8=alt,9=location,10=tz
 			sql='CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY,name VARCHAR(50)\
 				 ,year VARCHAR(50),month VARCHAR(50), day VARCHAR(50), hour VARCHAR(50), geolon VARCHAR(50)\
-			 	,geolat VARCHAR(50), altitude VARCHAR(50), location VARCHAR(150), timezone VARCHAR(50)\
-			 	,notes VARCHAR(500), image VARCHAR(250), countrycode VARCHAR(2), geonameid INTEGER, extra VARCHAR(250))'
+				 ,geolat VARCHAR(50), altitude VARCHAR(50), location VARCHAR(150), timezone VARCHAR(50)\
+				 ,notes VARCHAR(500), image VARCHAR(250), countrycode VARCHAR(2), geonameid INTEGER, extra VARCHAR(250))'
 			self.cursor.execute(sql)
 			dprint('creating sqlite table history in astrodb')
 
@@ -324,7 +332,7 @@ class openAstroSqlite:
 				dprint('dbcheck: updating history table definitions!')
 		
 		#check for settings_aspect table in astrodb
-		if self.tables.has_key('settings_aspect') == False:
+		if ('settings_aspect' in self.tables) == False:
 			sql='CREATE TABLE IF NOT EXISTS settings_aspect (degree INTEGER UNIQUE, name VARCHAR(50)\
 				 ,color VARCHAR(50),visible INTEGER, visible_grid INTEGER\
 				 ,is_major INTEGER, is_minor INTEGER, orb VARCHAR(5))'
@@ -370,12 +378,12 @@ class openAstroSqlite:
 			dprint('dbcheck astrodb.settings_aspect')		
 			degree = [ 0 , 30 , 45 , 60 , 72 , 90 , 120 , 135 , 144 , 150 , 180 ]
 			name = [ _('conjunction') , _('semi-sextile') , _('semi-square') , _('sextile') , _('quintile') , _('square') , _('trine') , _('sesquiquadrate') , _('biquintile') , _('quincunx') , _('opposition') ]
-			color = [ '#5757e2' ,	'#810757' , 			'#b14e58' ,	 '#d59e28' , '#1f99b3' ,'#dc0000' , '#36d100' , '#985a10' , 		  '#7a9810' , 	'#fff600' ,		 '#510060' ]
-			visible =      [ 1 , 0 , 0 , 1 , 1 , 1 , 1 , 0 , 1 , 1 , 1 ]
+			color = [ '#5757e2' ,	'#810757' ,			 '#b14e58' ,	 '#d59e28' , '#1f99b3' ,'#dc0000' , '#36d100' , '#985a10' ,		   '#7a9810' ,	 '#fff600' ,		 '#510060' ]
+			visible =	  [ 1 , 0 , 0 , 1 , 1 , 1 , 1 , 0 , 1 , 1 , 1 ]
 			visible_grid = [ 1 , 0 , 0 , 1 , 1 , 1 , 1 , 0 , 1 , 1 , 1 ]
-			is_major =     [ 1 , 0 , 0 , 1 , 0 , 1 , 1 , 0 , 0 , 0 , 1 ]
-			is_minor = 	   [ 0 , 1 , 1 , 0 , 1 , 0 , 0 , 1 , 1 , 0 , 0 ]
-			orb =    		[ 10, 3 , 3 , 6 , 2 , 8 , 8 , 3 , 2 , 3 , 10]
+			is_major =	 [ 1 , 0 , 0 , 1 , 0 , 1 , 1 , 0 , 0 , 0 , 1 ]
+			is_minor =		[ 0 , 1 , 1 , 0 , 1 , 0 , 0 , 1 , 1 , 0 , 0 ]
+			orb =			[ 10, 3 , 3 , 6 , 2 , 8 , 8 , 3 , 2 , 3 , 10]
 			#insert values
 			for i in range(len(degree)):	
 				sql='INSERT OR %s INTO settings_aspect \
@@ -385,7 +393,7 @@ class openAstroSqlite:
 				self.cursor.execute(sql)
 	
 		#check for colors table in astrodb
-		if self.tables.has_key('color_codes') == False:
+		if ('color_codes' in self.tables) == False:
 			sql='CREATE TABLE IF NOT EXISTS color_codes (name VARCHAR(50) UNIQUE\
 				 ,code VARCHAR(50))'
 			self.cursor.execute(sql)
@@ -394,6 +402,8 @@ class openAstroSqlite:
 
 		#default values for colors (if dbcheck)
 		self.defaultColors = {
+			"paper_color_0":"#000000",
+			"paper_color_1":"#ffffff",
 			"zodiac_bg_0":"#482900",
 			"zodiac_bg_1":"#6b3d00",
 			"zodiac_bg_2":"#5995e7",
@@ -473,14 +483,14 @@ class openAstroSqlite:
 		if self.dbcheck:
 			dprint('dbcheck astrodb.color_codes')
 			#insert values
-			for k,v in self.defaultColors.iteritems():	
+			for k,v in self.defaultColors.items():	
 				sql='INSERT OR %s INTO color_codes \
 				(name, code)\
 				VALUES("%s","%s")' % ( self.dbpurge , k, v )
 				self.cursor.execute(sql)
 
 		#check for label table in astrodb
-		if self.tables.has_key('label') == False:
+		if ('label' in self.tables) == False:
 			sql='CREATE TABLE IF NOT EXISTS label (name VARCHAR(150) UNIQUE\
 				 ,value VARCHAR(200))'
 			self.cursor.execute(sql)
@@ -515,7 +525,7 @@ class openAstroSqlite:
 		if self.dbcheck:
 			dprint('dbcheck astrodb.label')
 			#insert values
-			for k,v in self.defaultLabel.iteritems():	
+			for k,v in self.defaultLabel.items():	
 				sql='INSERT OR %s INTO label \
 				(name, value)\
 				VALUES("%s","%s")' % ( self.dbpurge , k, v )
@@ -534,11 +544,11 @@ class openAstroSqlite:
 				"visible_aspect_line":"INTEGER",
 				"visible_aspect_grid":"INTEGER"
 				}
-		if self.tables.has_key('settings_planet') == False:
+		if ('settings_planet' in self.tables) == False:
 			sql='CREATE TABLE IF NOT EXISTS settings_planet (id INTEGER UNIQUE, name VARCHAR(50)\
 				,color VARCHAR(50),visible INTEGER, element_points INTEGER, zodiac_relation VARCHAR(50)\
-			 	,label VARCHAR(50), label_short VARCHAR(20), visible_aspect_line INTEGER\
-			 	,visible_aspect_grid INTEGER)'
+				 ,label VARCHAR(50), label_short VARCHAR(20), visible_aspect_line INTEGER\
+				 ,visible_aspect_grid INTEGER)'
 			self.cursor.execute(sql)
 			self.dbcheck=True
 			dprint('creating sqlite table settings_planet in astrodb')
@@ -633,7 +643,7 @@ class openAstroSqlite:
 			cnames=[]
 			for i in range(len(list)):
 				cnames.append(list[i][1])
-			for key,val in self.table_settings_planet.iteritems():
+			for key,val in self.table_settings_planet.items():
 				if key not in cnames:
 					sql = 'ALTER TABLE settings_planet ADD %s %s'%(key,val)
 					dprint("dbcheck astrodb.settings_planet adding %s %s"%(key,val))					
@@ -740,7 +750,7 @@ class openAstroSqlite:
 		dict = []
 		for row in self.pcursor:
 			s={}			
-			for key,val in self.ptable_event_natal.iteritems():
+			for key,val in self.ptable_event_natal.items():
 				if row[key] == None:
 					s[key]=""
 				else:
@@ -824,7 +834,7 @@ class openAstroSqlite:
 		dict = []
 		for row in self.cursor:
 			s={}			
-			for key,val in self.table_settings_planet.iteritems():
+			for key,val in self.table_settings_planet.items():
 				s[key]=row[key]
 			dict.append(s)
 		self.close()
@@ -845,7 +855,7 @@ class openAstroSqlite:
 	
 	def getSettingsLocation(self):
 		#look if location is known
-		if self.astrocfg.has_key('home_location') == False or self.astrocfg.has_key('home_timezonestr') == False:
+		if ('home_location' in self.astrocfg) == False or ('home_timezonestr' in self.astrocfg) == False:
 			self.open()			
 			sql='INSERT OR REPLACE INTO astrocfg (name,value) VALUES("home_location","")'
 			self.cursor.execute(sql)
@@ -908,15 +918,15 @@ class openAstroSqlite:
 		target_cur.execute(sql)
 		for row in target_cur:
 			target_names[row['name']]=1
-		for k,v in target_names.iteritems():		
+		for k,v in target_names.items():		
 			for i in range(1,10):
-				if target_names.has_key('%s (#%s)' % (k,i)):
+				if '%s (#%s)' % (k,i) in target_names:
 					target_names[k] += 1
 					
 		#read input write target
 		for row in data:
 			
-			if target_names.has_key(row['name']):
+			if row['name'] in target_names:
 				name_suffix = ' (#%s)' % target_names[row['name']]
 				target_names[row['name']] += 1
 			else:
@@ -944,8 +954,8 @@ class openAstroSqlite:
 	database format:
 	'CREATE TABLE IF NOT EXISTS event_natal (id INTEGER PRIMARY KEY,name VARCHAR(50)\
 				 ,year VARCHAR(50),month VARCHAR(50), day VARCHAR(50), hour VARCHAR(50), geolon VARCHAR(50)\
-			 	,geolat VARCHAR(50), altitude VARCHAR(50), location VARCHAR(150), timezone VARCHAR(50)\
-			 	,notes VARCHAR(500), image VARCHAR(250))'
+				 ,geolat VARCHAR(50), altitude VARCHAR(50), location VARCHAR(150), timezone VARCHAR(50)\
+				 ,notes VARCHAR(500), image VARCHAR(250))'
 	"""	
 	def databaseMerge(self,target_db,input_db):
 		dprint('db.databaseMerge: %s << %s'%(target_db,input_db))
@@ -961,16 +971,16 @@ class openAstroSqlite:
 		target_cur.execute(sql)
 		for row in target_cur:
 			target_names[row['name']]=1
-		for k,v in target_names.iteritems():		
+		for k,v in target_names.items():		
 			for i in range(1,10):
-				if target_names.has_key('%s (#%s)' % (k,i)):
+				if '%s (#%s)' % (k,i) in target_names:
 					target_names[k] += 1
 
 		#read input write target
 		sql='SELECT * FROM event_natal'
 		input_cur.execute(sql)
 		for row in input_cur:
-			if target_names.has_key(row['name']):
+			if row['name'] in target_names:
 				name_suffix = ' (#%s)' % target_names[row['name']]
 				target_names[row['name']] += 1
 			else:
@@ -1026,34 +1036,34 @@ class openAstroSqlite:
 		diff = {}
 		sql = 'SELECT id,latitude,longitude FROM geonames\
  WHERE latitude >= %s AND latitude <= %s AND longitude >= %s AND longitude <= %s' % (lat-0.5,lat+0.5,lon-0.5,lon+0.5)
- 		self.gquery(sql)
- 		for row in self.gcursor:
- 			diff[zonetab.distance( lat , lon , row['latitude'] , row['longitude'])]=row['id']
- 		self.gclose()
- 		keys=diff.keys()
- 		keys.sort()
- 		
- 		dict={}
- 		if keys == []:
- 			dict = {'country':None,'admin1':None,'geonameid':None,'continent':None,'timezonestr':None}
- 			dprint('gnearest: no town found within 66km range!')
- 		else:
- 			sql = 'SELECT * FROM geonames WHERE id=%s LIMIT 1' % (diff[keys[0]])
- 			self.gquery(sql)
- 			geoname = self.gcursor.fetchone()
- 			self.gclose()
- 			dict['country']=geoname['country']
- 			dict['admin1']=geoname['admin1']
- 			dict['geonameid']=geoname['geonameid']
- 			dict['timezonestr']=geoname['timezone']
- 			sql = 'SELECT * FROM countryinfo WHERE isoalpha2="%s" LIMIT 1' % (geoname['country'])
-			self.gquery(sql) 			
- 			countryinfo = self.gcursor.fetchone()
- 			dict['continent']=countryinfo['continent']
- 			self.gclose()
- 			dprint('gnearest: found town %s at %s,%s,%s' % (geoname['name'],geoname['latitude'],
- 				geoname['longitude'],geoname['timezone']))
- 		return dict
+		self.gquery(sql)
+		for row in self.gcursor:
+			diff[zonetab.distance( lat , lon , row['latitude'] , row['longitude'])]=row['id']
+		self.gclose()
+		keys=list(diff.keys())
+		keys.sort()
+		
+		dict={}
+		if keys == []:
+			dict = {'country':None,'admin1':None,'geonameid':None,'continent':None,'timezonestr':None}
+			dprint('gnearest: no town found within 66km range!')
+		else:
+			sql = 'SELECT * FROM geonames WHERE id=%s LIMIT 1' % (diff[keys[0]])
+			self.gquery(sql)
+			geoname = self.gcursor.fetchone()
+			self.gclose()
+			dict['country']=geoname['country']
+			dict['admin1']=geoname['admin1']
+			dict['geonameid']=geoname['geonameid']
+			dict['timezonestr']=geoname['timezone']
+			sql = 'SELECT * FROM countryinfo WHERE isoalpha2="%s" LIMIT 1' % (geoname['country'])
+			self.gquery(sql)			 
+			countryinfo = self.gcursor.fetchone()
+			dict['continent']=countryinfo['continent']
+			self.gclose()
+			dprint('gnearest: found town %s at %s,%s,%s' % (geoname['name'],geoname['latitude'],
+				 geoname['longitude'],geoname['timezone']))
+		return dict
 	
 	def gquery(self, sql, tuple=None):
 		self.glink = sqlite3.connect(cfg.geonamesdb)
@@ -1090,7 +1100,7 @@ class openAstroInstance:
 	def __init__(self):
 		
 		#screen size
-		displayManager = gtk.gdk.display_manager_get()
+		displayManager = gdk.DisplayManager.get()
 		display = displayManager.get_default_display()
 		screen = display.get_default_screen()
 		self.screen_width = screen.get_width()
@@ -1434,9 +1444,9 @@ class openAstroInstance:
 			td['c1'] = 'cx="' + str(r) + '" cy="' + str(r) + '" r="' + str(r-36) + '"'
 			td['c1style'] = 'fill: none; stroke: %s; stroke-width: 1px; stroke-opacity:.4;'%(self.colors['zodiac_transit_ring_2'])
 			td['c2'] = 'cx="' + str(r) + '" cy="' + str(r) + '" r="' + str(r-72) + '"'
-			td['c2style'] = 'fill: #fff; fill-opacity:.4; stroke: %s; stroke-opacity:.4; stroke-width: 1px'%(self.colors['zodiac_transit_ring_1'])
+			td['c2style'] = 'fill: %s; fill-opacity:.4; stroke: %s; stroke-opacity:.4; stroke-width: 1px'%(openAstro.colors['paper_color_1'], self.colors['zodiac_transit_ring_1'])
 			td['c3'] = 'cx="' + str(r) + '" cy="' + str(r) + '" r="' + str(r-160) + '"'
-			td['c3style'] = 'fill: #fff; fill-opacity:.8; stroke: %s; stroke-width: 1px'%(self.colors['zodiac_transit_ring_0'])
+			td['c3style'] = 'fill: %s; fill-opacity:.8; stroke: %s; stroke-width: 1px'%(openAstro.colors['paper_color_1'], self.colors['zodiac_transit_ring_0'])
 			td['makeAspects'] = self.makeAspectsTransit( r , (r-160))
 			td['makeAspectGrid'] = self.makeAspectTransitGrid( r )
 			td['makePatterns'] = ''
@@ -1447,9 +1457,9 @@ class openAstroInstance:
 			td['c1'] = 'cx="' + str(r) + '" cy="' + str(r) + '" r="' + str(r-self.c1) + '"'
 			td['c1style'] = 'fill: none; stroke: %s; stroke-width: 1px; '%(self.colors['zodiac_radix_ring_2'])
 			td['c2'] = 'cx="' + str(r) + '" cy="' + str(r) + '" r="' + str(r-self.c2) + '"'
-			td['c2style'] = 'fill: #fff; fill-opacity:.2; stroke: %s; stroke-opacity:.4; stroke-width: 1px'%(self.colors['zodiac_radix_ring_1'])
+			td['c2style'] = 'fill: %s; fill-opacity:.2; stroke: %s; stroke-opacity:.4; stroke-width: 1px'%(openAstro.colors['paper_color_1'], self.colors['zodiac_radix_ring_1'])
 			td['c3'] = 'cx="' + str(r) + '" cy="' + str(r) + '" r="' + str(r-self.c3) + '"'
-			td['c3style'] = 'fill: #fff; fill-opacity:.8; stroke: %s; stroke-width: 1px'%(self.colors['zodiac_radix_ring_0'])
+			td['c3style'] = 'fill: %s; fill-opacity:.8; stroke: %s; stroke-width: 1px'%(openAstro.colors['paper_color_1'], self.colors['zodiac_radix_ring_0'])
 			td['makeAspects'] = self.makeAspects( r , (r-self.c3))
 			td['makeAspectGrid'] = self.makeAspectGrid( r )
 			td['makePatterns'] = self.makePatterns()
@@ -1537,6 +1547,12 @@ class openAstroInstance:
 		td['makeElements'] = self.makeElements( r )
 		td['makePlanetGrid'] = self.makePlanetGrid()
 		td['makeHousesGrid'] = self.makeHousesGrid()
+		td['paper_color_0'] = self.colors['paper_color_0']
+		print(self.colors['paper_color_0'])
+		print(self.colors['paper_color_1'])
+		td['paper_color_1'] = self.colors['paper_color_1']
+		print(td['paper_color_0'])
+		print(td['paper_color_1'])
 				
 		#read template
 		f=open(cfg.xml_svg)
@@ -1559,7 +1575,7 @@ class openAstroInstance:
 
 	#draw transit ring
 	def transitRing( self , r ):
-		out = '<circle cx="%s" cy="%s" r="%s" style="fill: none; stroke: #fff; stroke-width: 36px; stroke-opacity: .4;"/>' % (r,r,r-18)
+		out = '<circle cx="%s" cy="%s" r="%s" style="fill: none; stroke: %s; stroke-width: 36px; stroke-opacity: .4;"/>' % (r,r,r-18,openAstro.colors['paper_color_1'])
 		out += '<circle cx="%s" cy="%s" r="%s" style="fill: none; stroke: %s; stroke-width: 1px; stroke-opacity: .6;"/>' % (r,r,r,self.colors['zodiac_transit_ring_3'])
 		return out	
 	
@@ -1576,8 +1592,8 @@ class openAstroInstance:
 			y1 = self.sliceToY( 0 , r-self.c1 , offset ) + self.c1
 			x2 = self.sliceToX( 0 , r+2-self.c1 , offset ) - 2 + self.c1
 			y2 = self.sliceToY( 0 , r+2-self.c1 , offset ) - 2 + self.c1
-			out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #000; stroke-width: 1px; stroke-opacity:.9;"/>\n' % (
-				x1,y1,x2,y2 )
+			out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: %s; stroke-width: 1px; stroke-opacity:.9;"/>\n' % (
+				x1,y1,x2,y2, openAstro.colors['paper_color_0'])
 		return out
 		
 	def degreeTransitRing( self , r ):
@@ -1738,7 +1754,7 @@ class openAstroInstance:
 				roff=self.c1
 				
 			#offset is negative desc houses_degree_ut[6]
-			offset = (int(self.houses_degree_ut[xr/2]) / -1) + int(self.houses_degree_ut[i])
+			offset = (int(self.houses_degree_ut[int(xr/2)]) / -1) + int(self.houses_degree_ut[i])
 			x1 = self.sliceToX( 0 , (r-dropin) , offset ) + dropin
 			y1 = self.sliceToY( 0 , (r-dropin) , offset ) + dropin
 			x2 = self.sliceToX( 0 , r-roff , offset ) + roff
@@ -1805,7 +1821,7 @@ class openAstroInstance:
 		
 		planets_degut={}
 		
-		diff=range(len(self.planets))
+		diff=list(range(len(self.planets)))
 		for i in range(len(self.planets)):
 			if self.planets[i]['visible'] == 1:
 				#list of planets sorted by degree				
@@ -1832,13 +1848,13 @@ class openAstroInstance:
 				self.water = self.water + self.planets[i]['element_points'] + extrapoints
 				
 		output = ""	
-		keys = planets_degut.keys()
+		keys = list(planets_degut.keys())
 		keys.sort()
 		switch=0
 		
 		planets_degrouped = {}
 		groups = []
-		planets_by_pos = range(len(planets_degut))
+		planets_by_pos = list(range(len(planets_degut)))
 		planet_drange = 3.4
 		#get groups closely together
 		group_open=False
@@ -1871,7 +1887,7 @@ class openAstroInstance:
 				group_open=False	
 		
 		def zero(x): return 0
-		planets_delta = map(zero,range(len(self.planets)))
+		planets_delta = list(map(zero,list(range(len(self.planets)))))
 
 		#print groups
 		#print planets_by_pos
@@ -2005,7 +2021,7 @@ class openAstroInstance:
 				group_offset[i]=0
 				if self.planets[i]['visible'] == 1:
 					t_planets_degut[self.t_planets_degree_ut[i]]=i
-			t_keys = t_planets_degut.keys()
+			t_keys = list(t_planets_degut.keys())
 			t_keys.sort()
 			
 			#grab closely grouped planets
@@ -2127,7 +2143,7 @@ class openAstroInstance:
 	def makePatterns( self ):
 		"""
 		* Stellium: At least four planets linked together in a series of continuous conjunctions.
-    	* Grand trine: Three trine aspects together.
+		* Grand trine: Three trine aspects together.
 		* Grand cross: Two pairs of opposing planets squared to each other.
 		* T-Square: Two planets in opposition squared to a third. 
 		* Yod: Two qunicunxes together joined by a sextile. 
@@ -2189,24 +2205,24 @@ class openAstroInstance:
 							
 		yot={}
 		#check for double qunicunxes
-		for k,v in qc.iteritems():
+		for k,v in qc.items():
 			if len(qc[k]) >= 2:
 				#check for sextile
-				for l,w in qc[k].iteritems():
-					for m,x in qc[k].iteritems():
-						if sext[l].has_key(m):
+				for l,w in qc[k].items():
+					for m,x in qc[k].items():
+						if m in sext[l]:
 							if l > m:
 								yot['%s,%s,%s' % (k,m,l)] = [k,m,l]
 							else:
 								yot['%s,%s,%s' % (k,l,m)] = [k,l,m]
 		tsquare={}
 		#check for opposition
-		for k,v in opp.iteritems():
+		for k,v in opp.items():
 			if len(opp[k]) >= 1:
 				#check for square
-				for l,w in opp[k].iteritems():
-						for a,b in sq.iteritems():
-							if sq[a].has_key(k) and sq[a].has_key(l):
+				for l,w in opp[k].items():
+						for a,b in sq.items():
+							if k in sq[a] and l in sq[a]:
 								#print 'got tsquare %s %s %s' % (a,k,l)
 								if k > l:
 									tsquare['%s,%s,%s' % (a,l,k)] = '%s => %s, %s' % (
@@ -2216,24 +2232,24 @@ class openAstroInstance:
 										self.planets[a]['label'],self.planets[k]['label'],self.planets[l]['label'])
 		stellium={}
 		#check for 4 continuous conjunctions	
-		for k,v in conj.iteritems():
+		for k,v in conj.items():
 			if len(conj[k]) >= 1:
 				#first conjunction
-				for l,m in conj[k].iteritems():
+				for l,m in conj[k].items():
 					if len(conj[l]) >= 1:
-						for n,o in conj[l].iteritems():
+						for n,o in conj[l].items():
 							#skip 1st conj
 							if n == k:
 								continue
 							if len(conj[n]) >= 1:
 								#third conjunction
-								for p,q in conj[n].iteritems():
+								for p,q in conj[n].items():
 									#skip first and second conj
 									if p == k or p == n:
 										continue
 									if len(conj[p]) >= 1:										
 										#fourth conjunction
-										for r,s in conj[p].iteritems():
+										for r,s in conj[p].items():
 											#skip conj 1,2,3
 											if r == k or r == n or r == p:
 												continue
@@ -2247,8 +2263,8 @@ class openAstroInstance:
 		out='<g transform="translate(-30,380)">'
 		if len(yot) >= 1:
 			y=0
-			for k,v in yot.iteritems():
-				out += '<text y="%s" style="fill:#000; font-size: 12px;">%s</text>\n' % (y,_("Yot"))
+			for k,v in yot.items():
+				out += '<text y="%s" style="fill:%s; font-size: 12px;">%s</text>\n' % (y,_("Yot"), openAstro.colors['paper_color_0'])
 				
 				#first planet symbol
 				out += '<g transform="translate(20,%s)">' % (y)
@@ -2304,10 +2320,14 @@ class openAstroInstance:
 						else:
 							orb_before = 2.0
 						#check if we want to display this aspect	
-						if	( float(self.aspects[z]['degree']) - orb_before ) <= diff <= ( float(self.aspects[z]['degree']) + 1.0 ):
+						print(float(self.aspects[z]['degree'])-orb_before,diff,float(self.aspects[z]['degree']) + 1.0)
+						if (float(self.aspects[z]['degree']) - orb_before) <= diff <= (float(self.aspects[z]['degree']) + 1.0):
+							print(self.aspects[z])
 							if self.aspects[z]['visible'] == 1:
 								out = out + self.drawAspect( r , ar , self.planets_degree_ut[i] , self.t_planets_degree_ut[x] , self.colors["aspect_%s" %(self.aspects[z]['degree'])] )		
 							#aspect grid dictionary
+							#note: this will result in something /really/ ugly if used on the same day...
+							#otherwise, it is fine
 							if self.aspects[z]['visible_grid'] == 1:
 								self.atgrid.append({})
 								self.atgrid[-1]['p1']=i
@@ -2318,7 +2338,7 @@ class openAstroInstance:
 	
 	def makeAspectTransitGrid( self , r ):
 		out = '<g transform="translate(500,310)">'
-		out += '<text y="-15" x="0" style="fill:#000; font-size: 12px;">%s</text>\n' % (_("Planets in Transit"))
+		out += '<text y="-15" x="0" style="fill:%s; font-size: 12px;">%s</text>\n' % (openAstro.colors['paper_color_0'],_("Planets in Transit"))
 		line = 0
 		nl = 0
 		for i in range(len(self.atgrid)):
@@ -2341,8 +2361,8 @@ class openAstroInstance:
 				self.planets[self.atgrid[i]['p1']]['name'])
 			out += '</g>'
 			#difference in degrees
-			out += '<text y="8" x="45" style="fill:#000; font-size: 10px;">%s</text>' % (
-				self.dec2deg(self.atgrid[i]['diff']) )
+			out += '<text y="8" x="45" style="fill:%s; font-size: 10px;">%s</text>' % (
+				openAstro.colors['paper_color_0'], self.dec2deg(self.atgrid[i]['diff']) )
 			#line
 			out += '</g>'
 			line = line + 14		
@@ -2351,11 +2371,11 @@ class openAstroInstance:
 	
 	def makeAspectGrid( self , r ):
 		out=""
-		style='stroke:#000; stroke-width: 1px; stroke-opacity:.6; fill:none'
+		style='stroke:%s; stroke-width: 1px; stroke-opacity:.6; fill:none' %(openAstro.colors['paper_color_0'])
 		xindent=380
 		yindent=468
 		box=14
-		revr=range(len(self.planets))
+		revr=list(range(len(self.planets)))
 		revr.reverse()
 		for a in revr:
 			if self.planets[a]['visible_aspect_grid'] == 1:
@@ -2365,7 +2385,7 @@ class openAstroInstance:
 				out = out + '<use transform="scale(0.4)" x="'+str((xindent+2)*2.5)+'" y="'+str((yindent+1)*2.5)+'" xlink:href="#'+self.planets[a]['name']+'" />\n'
 				xindent = xindent + box
 				yindent = yindent - box
-				revr2=range(a)
+				revr2=list(range(a))
 				revr2.reverse()
 				xorb=xindent
 				yorb=yindent + box
@@ -2407,11 +2427,11 @@ class openAstroInstance:
 				#start of line				
 				out = out + '<g transform="translate(%s,%s)">' % (offset,li)
 				#planet text
-				out = out + '<text text-anchor="end" style="fill:#000; font-size: 10px;">'+str(self.planets[i]['label'])+'</text>'
+				out = out + '<text text-anchor="end" style="fill:%s; font-size: 10px;">%s</text>'  %(openAstro.colors['paper_color_0'], str(self.planets[i]['label']))
 				#planet symbol
 				out = out + '<g transform="translate(5,-8)"><use transform="scale(0.4)" xlink:href="#'+self.planets[i]['name']+'" /></g>'								
 				#planet degree				
-				out = out + '<text text-anchor="start" x="19" style="fill:#000; font-size: 10px;">'+self.dec2deg(self.planets_degree[i])+'</text>'		
+				out = out + '<text text-anchor="start" x="19" style="fill:%s; font-size: 10px;">%s</text>' %(openAstro.colors['paper_color_0'], self.dec2deg(self.planets_degree[i]))
 				#zodiac
 				out = out + '<g transform="translate(60,-8)"><use transform="scale(0.3)" xlink:href="#'+self.zodiac[self.planets_sign[i]]+'" /></g>'				
 				#planet retrograde
@@ -2435,9 +2455,9 @@ class openAstroInstance:
 			else:
 				cusp = str(i+1)
 			out += '<g transform="translate(0,'+str(li)+')">'
-			out += '<text text-anchor="end" x="40" style="fill:#000; font-size: 10px;">%s %s:</text>' % (self.label['cusp'],cusp)			
+			out += '<text text-anchor="end" x="40" style="fill:%s; font-size: 10px;">%s %s:</text>' % (openAstro.colors['paper_color_0'], self.label['cusp'],cusp)			
 			out += '<g transform="translate(40,-8)"><use transform="scale(0.3)" xlink:href="#'+self.zodiac[self.houses_sign[i]]+'" /></g>'
-			out += '<text x="53" style="fill:#000; font-size: 10px;"> %s</text>' % (self.dec2deg(self.houses_degree[i]))
+			out += '<text x="53" style="fill:%s; font-size: 10px;"> %s</text>' % (openAstro.colors['paper_color_0'], self.dec2deg(self.houses_degree[i]))
 			out += '</g>\n'
 			li = li + 14
 		out += '</g>\n'
@@ -2696,7 +2716,7 @@ class openAstroInstance:
 class mainWindow:
 	def __init__(self):
 		#gtktopwindow
-		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.window = gtk.Window(gtk.WindowType.TOPLEVEL)
 		self.window.connect("destroy", lambda w: gtk.main_quit())
 		self.window.set_title("OpenAstro.org")
 		self.window.set_icon_from_file(cfg.iconWindow)
@@ -2713,28 +2733,28 @@ class mainWindow:
 		#actions definitions
 		self.actions = [('File', None, _('Chart') ),
 								('Quit', gtk.STOCK_QUIT, _("Quit!"), None,'Quit the Program', self.quit_cb),
-	                     ('History', None, _('History') ),
-	                     ('newChart', gtk.STOCK_NEW, _('New Chart'), None, 'New Chart', self.eventDataNew ),
-	                     ('importXML', gtk.STOCK_OPEN, _('Open Chart'), None, 'Open Chart', self.doImport ),								
-	                     ('exportXML', gtk.STOCK_SAVE, _('Save Chart'), None, 'Save Chart', self.doExport ),
-	                     ('export', gtk.STOCK_SAVE_AS, _('Save as') ),
-	                     ('exportPNG', None, _('PNG Image'), None, 'PNG Image', self.doExport ),
-	                     ('exportSVG', None, _('SVG Image'), None, 'SVG Image', self.doExport ),
-	                     ('exportJPG', None, _('JPG Image'), None, 'JPG Image', self.doExport ),
-	                     ('import', None, _('Import') ),
-	                     ('importOroboros', None, _('Oroboros (*.xml)'), None, 'Oroboros (*.xml)', self.doImport ),
-	                     ('importAstrolog32', None, _('Astrolog (*.dat)'), None, 'Astrolog (*.dat)', self.doImport ),
-	                     ('importSkylendar', None, _('Skylendar (*.skif)'), None, 'Skylendar (*.skif)', self.doImport ),
-	                     ('importZet8', None, _('Zet8 Dbase (*.zbs)'), None, 'Zet8 Dbase (*.zbs)', self.doImport ),							
+						 ('History', None, _('History') ),
+						 ('newChart', gtk.STOCK_NEW, _('New Chart'), None, 'New Chart', self.eventDataNew ),
+						 ('importXML', gtk.STOCK_OPEN, _('Open Chart'), None, 'Open Chart', self.doImport ),								
+						 ('exportXML', gtk.STOCK_SAVE, _('Save Chart'), None, 'Save Chart', self.doExport ),
+						 ('export', gtk.STOCK_SAVE_AS, _('Save as') ),
+						 ('exportPNG', None, _('PNG Image'), None, 'PNG Image', self.doExport ),
+						 ('exportSVG', None, _('SVG Image'), None, 'SVG Image', self.doExport ),
+						 ('exportJPG', None, _('JPG Image'), None, 'JPG Image', self.doExport ),
+						 ('import', None, _('Import') ),
+						 ('importOroboros', None, _('Oroboros (*.xml)'), None, 'Oroboros (*.xml)', self.doImport ),
+						 ('importAstrolog32', None, _('Astrolog (*.dat)'), None, 'Astrolog (*.dat)', self.doImport ),
+						 ('importSkylendar', None, _('Skylendar (*.skif)'), None, 'Skylendar (*.skif)', self.doImport ),
+						 ('importZet8', None, _('Zet8 Dbase (*.zbs)'), None, 'Zet8 Dbase (*.zbs)', self.doImport ),							
 								('Print', gtk.STOCK_PRINT, _('Print'), None, 'Print', self.doPrint ),
-	                     ('Event', None, _('Event') ),
-	                     ('EditEvent', gtk.STOCK_EDIT, _('Edit Event'), None, 'Event Data', self.eventData ),
-	                     ('OpenDatabase', gtk.STOCK_HARDDISK, _('Open Database'), None, 'Open Database', self.openDatabase ),
-								('QuickOpenDatabase', None, _('Quick Open Database') ),	                     
-	                     ('OpenDatabaseFamous', gtk.STOCK_HARDDISK, _('Open Famous People Database'), None, 'Open Database Famous', self.openDatabaseFamous ),
-	                     ('Settings', None, _('Settings') ),
-	                     ('Special', None, _('Chart Type') ),
-	                     ('ZoomRadio', None, _('Zoom') ),
+						 ('Event', None, _('Event') ),
+						 ('EditEvent', gtk.STOCK_EDIT, _('Edit Event'), None, 'Event Data', self.eventData ),
+						 ('OpenDatabase', gtk.STOCK_HARDDISK, _('Open Database'), None, 'Open Database', self.openDatabase ),
+								('QuickOpenDatabase', None, _('Quick Open Database') ),						 
+						 ('OpenDatabaseFamous', gtk.STOCK_HARDDISK, _('Open Famous People Database'), None, 'Open Database Famous', self.openDatabaseFamous ),
+						 ('Settings', None, _('Settings') ),
+						 ('Special', None, _('Chart Type') ),
+						 ('ZoomRadio', None, _('Zoom') ),
 								('Planets', None, _('Planets & Angles'), None, 'Planets & Angles', self.settingsPlanets ),
 								('Aspects', None, _('Aspects'), None, 'Aspects', self.settingsAspects ),
 								('Colors', None, _('Colors'), None, 'Colors', self.settingsColors ),
@@ -2755,16 +2775,16 @@ class mainWindow:
 								('exportDB', None, _('Export Database'), None, 'Export Database', self.extraExportDB ),
 								('importDB', None, _('Import Database'), None, 'Import Database', self.extraImportDB ),
 								('About', None, _('About') ),
-								('AboutInfo', gtk.STOCK_INFO, _('Info'), None, 'Info', self.aboutInfo )  ,                   
-	                     ('AboutSupport', gtk.STOCK_HELP, _('Support'), None, 'Support', lambda w: webbrowser.open_new('http://www.openastro.org/?Support') )
-	                     ]
+								('AboutInfo', gtk.STOCK_INFO, _('Info'), None, 'Info', self.aboutInfo )  ,				   
+						 ('AboutSupport', gtk.STOCK_HELP, _('Support'), None, 'Support', lambda w: webbrowser.open_new('http://www.openastro.org/?Support') )
+						 ]
 
 		#update UI
 		self.updateUI()
 
 		# Create a MenuBar
 		menubar = self.uimanager.get_widget('/MenuBar')
-		self.vbox.pack_start(menubar, False)
+		self.vbox.pack_start(menubar, False, True , True)
 		
 		#make first SVG
 		self.tempfilename = openAstro.makeSVG()
@@ -2774,8 +2794,8 @@ class mainWindow:
 		self.draw.setSVG(self.tempfilename)
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.add_with_viewport(self.draw)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-		self.vbox.pack_start(scrolledwindow)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
+		self.vbox.pack_start(scrolledwindow,True,True,True)
 	
 		self.window.add(self.vbox)
 		self.window.show_all()
@@ -2795,8 +2815,8 @@ class mainWindow:
 	""" Extra Menu Items Functions (extraExportDB, extraImportDB) """
 	
 	def extraExportDB(self, widget):
-		chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                                  buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+		chooser = gtk.FileChooserDialog(title=None,action=gtk.FileChooserAction.SAVE,
+								  buttons=(gtk.STOCK_CANCEL,gtk.ResponseType.CANCEL,gtk.STOCK_SAVE,gtk.ResponseType.OK))
 		chooser.set_current_folder(cfg.homedir)
 		chooser.set_current_name('openastro-database.sql')
 		filter = gtk.FileFilter()
@@ -2805,16 +2825,16 @@ class mainWindow:
 		chooser.add_filter(filter)
 		response = chooser.run()
 		
-		if response == gtk.RESPONSE_OK:
+		if response == gtk.ResponseType.OK:
 			copyfile(cfg.peopledb, chooser.get_filename())
 
-		elif response == gtk.RESPONSE_CANCEL:
-					dprint('Dialog closed, no files selected')	
+		elif response == gtk.ResponseType.CANCEL:
+			dprint('Dialog closed, no files selected')	
 		chooser.destroy()
 	
 	def extraImportDB(self, widget):
-		chooser = gtk.FileChooserDialog(title=_("Please select database to import"),action=gtk.FILE_CHOOSER_ACTION_OPEN,
-                                  buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+		chooser = gtk.FileChooserDialog(title=_("Please select database to import"),action=gtk.FileChooserAction.OPEN,
+								  buttons=(gtk.STOCK_CANCEL,gtk.ResponseType.CANCEL,gtk.STOCK_OPEN,gtk.ResponseType.OK))
 		chooser.set_current_folder(cfg.homedir)
 		filter = gtk.FileFilter()
 		filter.set_name(_("OpenAstro.org Databases (*.sql)"))
@@ -2822,11 +2842,11 @@ class mainWindow:
 		chooser.add_filter(filter)
 		response = chooser.run()
 		
-		if response == gtk.RESPONSE_OK:
+		if response == gtk.ResponseType.OK:
 			db.databaseMerge(cfg.peopledb,chooser.get_filename())
 
-		elif response == gtk.RESPONSE_CANCEL:
-					dprint('Dialog closed, no files selected')	
+		elif response == gtk.ResponseType.CANCEL:
+			dprint('Dialog closed, no files selected')	
 		chooser.destroy()			
 
 	"""	Function to check if we have an internet connection	for geonames.org geocoder """
@@ -2846,7 +2866,7 @@ class mainWindow:
 		
 		try:
 			socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM)
-		except socket.error, msg:
+		except socket.error as msg:
 			self.iconn = False
 			dprint('iconn: no connection (getaddrinfo)')
 			return		
@@ -2855,12 +2875,12 @@ class mainWindow:
 			af, socktype, proto, canonname, sa = res
 			try:
 				s = socket.socket(af, socktype, proto)
-			except socket.error, msg:
+			except socket.error as msg:
 				s = None
 				continue
 			try:
 				s.connect(sa)
-			except (socket.error, timeoutsocket.Timeout):
+			except (socket.error,timeoutsocket.Timeout):
 				s.close()
 				s = None
 				continue
@@ -2895,8 +2915,8 @@ class mainWindow:
 		
 	def doExport(self, widget):
 
-		chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                                  buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+		chooser = gtk.FileChooserDialog(title=None,action=gtk.FileChooserAction.SAVE,
+								  buttons=(gtk.STOCK_CANCEL,gtk.ResponseType.CANCEL,gtk.STOCK_SAVE,gtk.ResponseType.OK))
 		chooser.set_current_folder(cfg.homedir)
 		
 		filter = gtk.FileFilter()
@@ -2930,25 +2950,27 @@ class mainWindow:
 		
 		response = chooser.run()
 		
-		if response == gtk.RESPONSE_OK:
+		if response == gtk.ResponseType.OK:
 			if widget.get_name() == 'exportSVG':
 				copyfile(cfg.tempfilename, chooser.get_filename())
 			elif widget.get_name() == 'exportPNG':
-				os.system("%s %s %s" % ('convert',cfg.tempfilename,"'"+chooser.get_filename()+"'"))
+				os.system("convert {} '{}'".format(cfg.tempfilename,chooser.get_filename()))
 			elif widget.get_name() == 'exportJPG':
-				os.system("%s %s %s" % ('convert',cfg.tempfilename,"'"+chooser.get_filename()+"'"))
+				os.system("convert {} '{}'".format(cfg.tempfilename,chooser.get_filename()))
 			elif widget.get_name() == 'exportXML':
 				openAstro.exportOAC(chooser.get_filename())
-		elif response == gtk.RESPONSE_CANCEL:
-					dprint('Dialog closed, no files selected')
+		elif response == gtk.ResponseType.CANCEL:
+			dprint('Dialog closed, no files selected')
 			
 		chooser.destroy()
 		return
 	
 	def doImport(self, widget):
 	
-		chooser = gtk.FileChooserDialog(title=_('Select file to open'),action=gtk.FILE_CHOOSER_ACTION_OPEN,
-                                  buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+		chooser = gtk.FileChooserDialog(title=_('Select file to open'),
+								  action=gtk.FileChooserAction.OPEN,
+								  buttons=(gtk.STOCK_CANCEL,gtk.ResponseType.CANCEL,
+								  gtk.STOCK_OPEN,gtk.ResponseType.OK))
 		chooser.set_current_folder(cfg.homedir)
 		
 		filter = gtk.FileFilter()
@@ -2968,11 +2990,11 @@ class mainWindow:
 			filter.add_pattern("*.dat")
 		elif widget.get_name() == 'importZet8':
 			filter.set_name(_("Zet8 Databases (*.zbs)"))
-			filter.add_pattern("*.zbs")	
+			filter.add_pattern("*.zbs")
 		chooser.add_filter(filter)		
 		response = chooser.run()
 		
-		if response == gtk.RESPONSE_OK:
+		if response == gtk.ResponseType.OK:
 			if widget.get_name() == 'importXML':
 				openAstro.importOAC(chooser.get_filename())
 			elif widget.get_name() == 'importOroboros':
@@ -2984,8 +3006,8 @@ class mainWindow:
 			elif widget.get_name() == 'importZet8':
 				openAstro.importZet8(chooser.get_filename())			
 			self.updateChart()
-		elif response == gtk.RESPONSE_CANCEL:
-					dprint('Dialog closed, no files selected')
+		elif response == gtk.ResponseType.CANCEL:
+			dprint('Dialog closed, no files selected')
 		chooser.destroy()
 		return
 	
@@ -3040,24 +3062,25 @@ class mainWindow:
 		table.set_border_width(10)
 
 		#options
-		table.attach(gtk.Label(_("Select year for Solar Return")), 0, 1, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
-		entry=gtk.Entry(4)
-		entry.set_width_chars(4) 
+		table.attach(gtk.Label(_("Select year for Solar Return")), 0, 1, 0, 1, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
+		entry=gtk.Entry()
+		entry.set_width_chars(4)
+		entry.set_max_length(4) 
 		entry.set_text(str(datetime.datetime.now().year))
-		table.attach(entry, 1, 2, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(entry, 1, 2, 0, 1, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		
 		#make the ui layout with ok button
 		self.win_SS.vbox.pack_start(table, True, True, 0)
 		
 		#ok button
-		button = gtk.Button(stock=gtk.STOCK_OK)
+		button = gtk.Button.new_from_stock(gtk.STOCK_OK)
 		button.connect("clicked", self.specialSolarSubmit, entry)
-		button.set_flags(gtk.CAN_DEFAULT)		
+		button.grab_default()		
 		self.win_SS.action_area.pack_start(button, True, True, 0)
 		button.grab_default()		
 
 		#cancel button
-		button = gtk.Button(stock=gtk.STOCK_CANCEL)
+		button = gtk.Button.new_from_stock(gtk.STOCK_CANCEL)
 		button.connect("clicked", lambda w: self.win_SS.destroy())
 		self.win_SS.action_area.pack_start(button, True, True, 0)
 
@@ -3088,39 +3111,46 @@ class mainWindow:
 		table.set_border_width(10)
 
 		#options
-		table.attach(gtk.Label(_("Select date for Secondary Progression")+":"), 0, 1, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10, ypadding=10)
+		table.attach(gtk.Label(_("Select date for Secondary Progression")+":"), 0, 1, 0, 1, 
+			xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10, ypadding=10)
 		hbox = gtk.HBox(spacing=4)  # pack_start(child, expand=True, fill=True, padding=0)
 		entry={}
 		
-		hbox.pack_start(gtk.Label(_('Year')+": "))	
-		entry['Y']=gtk.Entry(4)
+		hbox.pack_start(gtk.Label(_('Year')+": "),True,True,True)	
+		entry['Y']=gtk.Entry()
+		entry['Y'].set_max_length(4)
 		entry['Y'].set_width_chars(4) 
 		entry['Y'].set_text(str(datetime.datetime.now().year))
-		hbox.pack_start(entry['Y'])
-		hbox.pack_start(gtk.Label(_('Month')+": "))	
-		entry['M']=gtk.Entry(2)
+		hbox.pack_start(entry['Y'],True,True,True)
+		hbox.pack_start(gtk.Label(_('Month')+": "),True,True,True)	
+		entry['M']=gtk.Entry()
+		entry['M'].set_max_length(2)
 		entry['M'].set_width_chars(2) 
 		entry['M'].set_text('%02d'%(datetime.datetime.now().month))
-		hbox.pack_start(entry['M'])
-		hbox.pack_start(gtk.Label(_('Day')+": "))	
-		entry['D']=gtk.Entry(2)
-		entry['D'].set_width_chars(2) 
+		hbox.pack_start(entry['M'],True,True,True)
+		hbox.pack_start(gtk.Label(_('Day')+": "),True,True,True)	
+		entry['D']=gtk.Entry()
+		entry['D'].set_max_length(2)
+		entry['D'].set_width_chars(2)
 		entry['D'].set_text(str(datetime.datetime.now().day))
-		hbox.pack_start(entry['D'])	
-		table.attach(hbox,0,1,1,2, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10, ypadding=10)
+		hbox.pack_start(entry['D'],True,True,True)
+		table.attach(hbox,0,1,1,2, xoptions=gtk.AttachOptions.SHRINK, 
+			yoptions=gtk.AttachOptions.SHRINK, xpadding=10, ypadding=10)
 		
 		hbox = gtk.HBox(spacing=4)
-		hbox.pack_start(gtk.Label(_('Hour')+": "))	
-		entry['h']=gtk.Entry(2)
-		entry['h'].set_width_chars(2) 
+		hbox.pack_start(gtk.Label(_('Hour')+": "),True,True,True)	
+		entry['h']=gtk.Entry()
+		entry['h'].set_max_length(2)
+		entry['h'].set_width_chars(2)
 		entry['h'].set_text('%02d'%(datetime.datetime.now().hour))
-		hbox.pack_start(entry['h'])
-		hbox.pack_start(gtk.Label(_('Min')+": "))	
-		entry['m']=gtk.Entry(2)
+		hbox.pack_start(entry['h'],True,True,True)
+		hbox.pack_start(gtk.Label(_('Min')+": "),True,True,True)
+		entry['m']=gtk.Entry()
+		entry['m'].set_max_length(2) 
 		entry['m'].set_width_chars(2) 
 		entry['m'].set_text('%02d'%(datetime.datetime.now().minute))
-		hbox.pack_start(entry['m'])
-		table.attach(hbox,0,1,2,3, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10, ypadding=10)
+		hbox.pack_start(entry['m'],True,True,True)
+		table.attach(hbox,0,1,2,3, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10, ypadding=10)
 		
 		#make the ui layout with ok button
 		self.win_SSP.vbox.pack_start(table, True, True, 0)
@@ -3128,7 +3158,7 @@ class mainWindow:
 		#ok button
 		button = gtk.Button(stock=gtk.STOCK_OK)
 		button.connect("clicked", self.specialSecondaryProgressionSubmit, entry)
-		button.set_flags(gtk.CAN_DEFAULT)		
+		button.set_can_default(True)		
 		self.win_SSP.action_area.pack_start(button, True, True, 0)
 		button.grab_default()		
 
@@ -3149,47 +3179,47 @@ class mainWindow:
 	
 	def tableMonthlyTimeline(self, widget):
 		dialog = gtk.Dialog(_("Select Month"),
-                     self.window,
-                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                     (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                      gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+					 self.window,
+					 gtk.DialogFlags.MODAL | gtk.DialogFlags.DESTROY_WITH_PARENT,
+					 (gtk.STOCK_CANCEL, gtk.ResponseType.REJECT,
+					  gtk.STOCK_OK, gtk.ResponseType.ACCEPT))
 
 		dialog.connect("destroy", lambda w: dialog.destroy())
 		dialog.set_size_request(200, 200)
 		dialog.move(50,50)
 		self.tMTentry={}
-		dialog.vbox.pack_start(gtk.Label(_('Year')+": "))	
-		self.tMTentry['Y']=gtk.Entry(4)
+		dialog.vbox.pack_start(gtk.Label(_('Year')+": "),True,True,True)	
+		self.tMTentry['Y']=gtk.Entry()
+		self.tMTentry['Y'].set_max_length(4) 
 		self.tMTentry['Y'].set_width_chars(4) 
 		self.tMTentry['Y'].set_text(str(datetime.datetime.now().year))
 		dialog.vbox.pack_start(self.tMTentry['Y'], False, False, 0)
-		dialog.vbox.pack_start(gtk.Label(_('Month')+": "))	
-		self.tMTentry['M']=gtk.Entry(2)
+		dialog.vbox.pack_start(gtk.Label(_('Month')+": "),True,True,True)	
+		self.tMTentry['M']=gtk.Entry()
+		self.tMTentry['M'].set_max_length(2) 
 		self.tMTentry['M'].set_width_chars(2) 
 		self.tMTentry['M'].set_text('%02d'%(datetime.datetime.now().month))
 		dialog.vbox.pack_start(self.tMTentry['M'], False, False, 0)
 		dialog.show_all()
 		
 		ret = dialog.run()
-		if ret == gtk.RESPONSE_ACCEPT:
-			dialog.destroy()
+		if ret == gtk.ResponseType.ACCEPT:
 			self.tableMonthlyTimelineShow()
-		else:
-			dialog.destroy()
+		dialog.destroy()
 		return
 
 	def tableMonthlyTimelinePrint(self, pages, pdf, window, name):
 		settings = None
 		print_op = gtk.PrintOperation()
-		print_op.set_unit(gtk.UNIT_PIXEL)
+		print_op.set_unit(gtk.Unit.PIXEL)
 		if settings != None: 
 			print_op.set_print_settings(settings)
 		print_op.connect("begin_print", self.tableMonthlyTimelinePrintBegin, pages)
 		print_op.connect("draw_page", self.tableMonthlyTimelinePrintDraw)
 
 		if pdf:
-			chooser = gtk.FileChooserDialog(title=_("Select Export Filename"),action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                                  buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+			chooser = gtk.FileChooserDialog(title=_("Select Export Filename"),action=gtk.FileChooserAction.SAVE,
+								  buttons=(gtk.STOCK_CANCEL,gtk.ResponseType.CANCEL,gtk.STOCK_SAVE,gtk.ResponseType.OK))
 			chooser.set_current_folder(cfg.homedir)
 			chooser.set_current_folder(cfg.homedir)
 			chooser.set_current_name(name)
@@ -3198,30 +3228,31 @@ class mainWindow:
 			filter.add_pattern("*.pdf")
 			chooser.add_filter(filter)
 			response = chooser.run()
-			if response == gtk.RESPONSE_OK:
+			if response == gtk.ResponseType.OK:
 				print_op.set_export_filename(chooser.get_filename())
 				chooser.destroy()
-				res = print_op.run(gtk.PRINT_OPERATION_ACTION_EXPORT, window)	
+				res = print_op.run(gtk.PrintOperationAction.EXPORT, window)	
 			else:
 				chooser.destroy()
 				print_op.cancel()
 				res = None
 			
 		else:
-			res = print_op.run(gtk.PRINT_OPERATION_ACTION_PRINT_DIALOG, window)		
+			res = print_op.run(gtk.PrintOperationAction.PRINT_DIALOG, window)		
 
-		if res == gtk.PRINT_OPERATION_RESULT_ERROR:
-			error_dialog = gtk.MessageDialog(window,gtk.DIALOG_DESTROY_WITH_PARENT,gtk.MESSAGE_ERROR,gtk.BUTTONS_CLOSE,"Error printing:\n")
+		if res == gtk.PrintOperationResult.ERROR:
+			error_dialog = gtk.MessageDialog(window,gtk.DialogFlags.DESTROY_WITH_PARENT,
+				gtk.MessageType.ERROR,gtk.ButtonsType.CLOSE,"Error printing:\n")
 			error_dialog.connect("response", lambda w,id: w.destroy())
 			error_dialog.show()
-		elif res == gtk.PRINT_OPERATION_RESULT_APPLY:
+		elif res == gtk.PrintOperationResult.APPLY:
 			settings = print_op.get_print_settings()
 
 	def tableMonthlyTimelinePrintBegin(self, operation, context, pages):
 		operation.set_n_pages(pages)
 		operation.set_use_full_page(False)
 		ps = gtk.PageSetup()
-		ps.set_orientation(gtk.PAGE_ORIENTATION_PORTRAIT)
+		ps.set_orientation(gtk.PageOrientation.PORTRAIT)
 		ps.set_paper_size(gtk.PaperSize(gtk.PAPER_NAME_A4))
 		operation.set_default_page_setup(ps)
 	
@@ -3304,7 +3335,7 @@ class mainWindow:
 									atgrid[s]={}
 								atgrid[s][d]=orb
 		#sort
-		keys = astypes.keys()
+		keys = list(astypes.keys())
 		keys.sort()
 		pages = int(math.ceil(len(keys)/65.0))
 		
@@ -3328,19 +3359,19 @@ class mainWindow:
 				pagelen = 66
 			ylen = ((len(keys)+1)-p*65)*16	
 			for a in range(delta.days):
-				out += '<text x="%s" y="%s" style="fill: #000; font-size: 10">%02d</text>\n'%(
-					dx[a],ystart,a+1)
-				out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #000; stroke-width: .5; stroke-opacity:1;"/>\n'%(
-					dx[a]-5,ystart,dx[a]-5,ystart+pagelen*16)	
+				out += '<text x="%s" y="%s" style="fill: %s; font-size: 10">%02d</text>\n'%(
+					dx[a],ystart,openAstro.colors['paper_color_0'],a+1)
+				out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: %s; stroke-width: .5; stroke-opacity:1;"/>\n'%(
+					dx[a]-5,ystart,dx[a]-5,ystart+pagelen*16,openAstro.colors['paper_color_0'])	
 				#skipdays line
 				if a in skipdays:
-					out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #000; stroke-width: .5; stroke-opacity:1;"/>\n'%(
-						dx[a]-5+20,ystart,dx[a]-5+20,ystart+pagelen*16)						
+					out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: %s; stroke-width: .5; stroke-opacity:1;"/>\n'%(
+						dx[a]-5+20,ystart,dx[a]-5+20,ystart+pagelen*16,openAstro.colors['paper_color_0'])						
 				
 
 			#last line
-			out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #000; stroke-width: .5; stroke-opacity:1;"/>\n'%(
-					dx[-1]-5,ystart,dx[-1]-5,ystart+pagelen*16)
+			out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: %s; stroke-width: .5; stroke-opacity:1;"/>\n'%(
+					dx[-1]-5,ystart,dx[-1]-5,ystart+pagelen*16,openAstro.colors['paper_color_0'])
 					
 		#get the number of total aspects
 		c = 0
@@ -3351,15 +3382,15 @@ class mainWindow:
 			pagey = (pagenum - 1) * 200
 			y = (c*16) + pagey
 			#horizontal lines
-			out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #000; stroke-width: .5; stroke-opacity:1;"/>\n'%(
-				0,y-1,dx[skipdays[0]]+15,y-1)
+			out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: %s; stroke-width: .5; stroke-opacity:1;"/>\n'%(
+				0,y-1,dx[skipdays[0]]+15,y-1,openAstro.colors['paper_color_0'])
 			for s in range(len(skipdays)):
 				if s is len(skipdays)-1:
-					out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #000; stroke-width: .5; stroke-opacity:1;"/>\n'%(
-						dx[skipdays[s]+1]-5,y-1,dx[-1],y-1)
+					out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: %s; stroke-width: .5; stroke-opacity:1;"/>\n'%(
+						dx[skipdays[s]+1]-5,y-1,dx[-1],y-1,openAstro.colors['paper_color_0'])
 				else:
-					out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: #000; stroke-width: .5; stroke-opacity:1;"/>\n'%(
-						dx[skipdays[s]+1]-5,y-1,dx[skipdays[s+1]]+15,y-1)
+					out += '<line x1="%s" y1="%s" x2="%s" y2="%s" style="stroke: %s; stroke-width: .5; stroke-opacity:1;"/>\n'%(
+						dx[skipdays[s]+1]-5,y-1,dx[skipdays[s+1]]+15,y-1,openAstro.colors['paper_color_0'])
 			#outer planet
 			out += '<g transform="translate(0,%s)"><g transform="scale(.5)"><use x="0" y="0" xlink:href="#%s" /></g></g>\n'%(
 				y,openAstro.planets[x]['name'])
@@ -3381,10 +3412,10 @@ class mainWindow:
 					#check for retrograde outer planet
 					if retrogrid[keys[m]][d]:
 						out += '<g transform="translate(%s,%s)"><g transform="scale(.3)">\
-							<use x="0" y="0" xlink:href="#retrograde" style="fill:black; fill-opacity:.8;" /></g></g>\n'%(
-							dx[d]+10,y+10)							
-					out += '<text x="%s" y="%s" style="fill: #000; font-size: 10">%s</text>\n'%(
-						dx[d],y+9,strop[:3])
+							<use x="0" y="0" xlink:href="#retrograde" style="fill:%s; fill-opacity:.8;" /></g></g>\n'%(
+							dx[d]+10,y+10,openAstro.colors['paper_color_0'])							
+					out += '<text x="%s" y="%s" style="fill: %s; font-size: 10">%s</text>\n'%(
+						dx[d],y+9,strop[:3],openAstro.colors['paper_color_0'])
 							
 				else:
 					out += ""
@@ -3419,8 +3450,8 @@ class mainWindow:
 				offset=0
 			else:
 				offset=10
-			pagesRect += '<rect x="%s" y="%s" width="%s" height="%s" style="fill: #ffffff;" />'%(
-				x,y+(p*1188)+offset,w,h)
+			pagesRect += '<rect x="%s" y="%s" width="%s" height="%s" style="fill: %s;" />'%(
+				x,y+(p*1188)+offset,w,h, openAstro.colors['paper_color_1'])
 				
 		td['pagesRect'] = pagesRect
 				
@@ -3436,7 +3467,7 @@ class mainWindow:
 		f.close()
 		
 		if printing == None:
-			self.win_TMT = gtk.Window(gtk.WINDOW_TOPLEVEL)
+			self.win_TMT = gtk.Window(gtk.WindowType.TOPLEVEL)
 			self.win_TMT.connect("destroy", lambda w: self.win_TMT.destroy())
 			self.win_TMT.set_title("OpenAstro.org Timeline")
 			self.win_TMT.set_icon_from_file(cfg.iconWindow)
@@ -3446,17 +3477,17 @@ class mainWindow:
 			hbox = gtk.HBox()
 			button = gtk.Button(_('Print'))
 			button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(pages,pdf=False,window=self.win_TMT,name="timeline-%s.pdf"%(openAstro.name)))
-			hbox.pack_start(button,False,False)
+			hbox.pack_start(button,False,False,True)
 			button = gtk.Button(_('Save as PDF'))
 			button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(pages,pdf=True,window=self.win_TMT,name="timeline-%s.pdf"%(openAstro.name)))
-			hbox.pack_start(button,False,False)
-			vbox.pack_start(hbox,False,False)
+			hbox.pack_start(button,False,False,True)
+			vbox.pack_start(hbox,False,False,True)
 			draw = drawSVG()
 			draw.setSVG(cfg.tempfilenametable)
 			scrolledwindow = gtk.ScrolledWindow()
 			scrolledwindow.add_with_viewport(draw)
-			scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-			vbox.pack_start(scrolledwindow)
+			scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
+			vbox.pack_start(scrolledwindow,True,True,True)
 		
 			self.win_TMT.add(vbox)
 			self.win_TMT.show_all()
@@ -3469,8 +3500,8 @@ class mainWindow:
 		xindent=50
 		yindent=200
 		box=14
-		style='stroke:#000; stroke-width: 1px; stroke-opacity:.6; fill:none'
-		textstyle="font-size: 11px; color: #000"
+		style='stroke:%s; stroke-width: 1px; stroke-opacity:.6; fill:none' %(openAstro.colors['paper_color_0'])
+		textstyle="font-size: 11px; color: %s" %(openAstro.colors['paper_color_0'])
 		#draw cusps
 		for cusp in range(len(openAstro.houses_degree_ut)):
 				x = xindent - box
@@ -3481,7 +3512,7 @@ class mainWindow:
 						style="%s">%s</text>\n\
 						'%(x-30, y+box-5, textstyle, openAstro.label['cusp']+" "+str(cusp+1))
 									
-		revr=range(len(openAstro.planets))
+		revr=list(range(len(openAstro.planets)))
 		for a in revr:
 			if 23 <= a <= 26:
 				continue; #skip asc/dsc/mc/ic
@@ -3594,7 +3625,7 @@ class mainWindow:
 			td['viewbox'] = "0 0 840 %s" %( pagesY ) 
 
 		td['data'] = out
-		td['pagesRect'] = '<rect x="0" y="0" width="840" height="1188" style="fill: #ffffff;" />'
+		td['pagesRect'] = '<rect x="0" y="0" width="840" height="1188" style="fill: %s;" />'  %(openAstro.colors['paper_color_1'])
 		
 		#read and write template
 		f=open(cfg.xml_svg_table)
@@ -3609,7 +3640,7 @@ class mainWindow:
 
 		#display svg
 		if printing == None:
-			self.win_TCA = gtk.Window(gtk.WINDOW_TOPLEVEL)
+			self.win_TCA = gtk.Window(gtk.WindowType.TOPLEVEL)
 			self.win_TCA.connect("destroy", lambda w: self.win_TCA.destroy())
 			self.win_TCA.set_title("OpenAstro.org Cusp Aspects")
 			self.win_TCA.set_icon_from_file(cfg.iconWindow)
@@ -3619,23 +3650,23 @@ class mainWindow:
 			hbox = gtk.HBox()
 			button = gtk.Button(_('Print'))
 			button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(pages=1,pdf=False,window=self.win_TCA,name="cusp-aspects-%s.pdf"%(openAstro.name)))
-			hbox.pack_start(button,False,False)
+			hbox.pack_start(button,False,False,True)
 			button = gtk.Button(_('Save as PDF'))
 			button.connect("clicked", lambda w: self.tableMonthlyTimelinePrint(pages=1,pdf=True,window=self.win_TCA,name="cusp-aspects-%s.pdf"%(openAstro.name)))
-			hbox.pack_start(button,False,False)
-			vbox.pack_start(hbox,False,False)
+			hbox.pack_start(button,False,False,True)
+			vbox.pack_start(hbox,False,False,True)
 			draw = drawSVG()
 			draw.setSVG(cfg.tempfilenametable)
 			scrolledwindow = gtk.ScrolledWindow()
 			scrolledwindow.add_with_viewport(draw)
-			scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-			vbox.pack_start(scrolledwindow)
+			scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
+			vbox.pack_start(scrolledwindow,True,True,True)
 			self.win_TCA.add(vbox)
 			self.win_TCA.show_all()		
 		return
 		
 	def aboutInfo(self, widget):
-		dialog=gtk.Dialog('Info',self.window,0,(gtk.STOCK_OK, gtk.RESPONSE_DELETE_EVENT))
+		dialog=gtk.Dialog('Info',self.window,0,(gtk.STOCK_OK, gtk.ResponseType.DELETE_EVENT))
 		dialog.set_icon_from_file(cfg.iconWindow)
 		dialog.connect("response", lambda w,e: dialog.destroy())				
 		dialog.connect("close", lambda w,e: dialog.destroy())
@@ -3670,7 +3701,7 @@ class mainWindow:
 		return		
 			
 	def openDatabase(self, widget, extraDB=None):
-		self.win_OD = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.win_OD = gtk.Window(gtk.WindowType.TOPLEVEL)
 		self.win_OD.set_icon_from_file(cfg.iconWindow)
 		self.win_OD.set_title(_('Open Database Entry'))
 		self.win_OD.set_size_request(600, 450)
@@ -3681,7 +3712,7 @@ class mainWindow:
 		self.win_OD_treeview = gtk.TreeView(self.listmodel)
 		#selection
 		self.win_OD_selection = self.win_OD_treeview.get_selection()
-		self.win_OD_selection.set_mode(gtk.SELECTION_SINGLE)
+		self.win_OD_selection.set_mode(gtk.SelectionMode.SINGLE)
 		#treeview columns		
 		self.win_OD_tvcolumn0 = gtk.TreeViewColumn(_('Name'))
 		self.win_OD_tvcolumn1 = gtk.TreeViewColumn(_('Birth Date (Local)'))
@@ -3714,9 +3745,9 @@ class mainWindow:
 		self.win_OD_tvcolumn1.pack_start(cell1, True)
 		self.win_OD_tvcolumn2.pack_start(cell2, True)
 		#set the cell attributes to the listmodel column
-		self.win_OD_tvcolumn0.set_attributes(cell0, text=0)
-		self.win_OD_tvcolumn1.set_attributes(cell1, text=1)
-		self.win_OD_tvcolumn2.set_attributes(cell2, text=2)
+		self.win_OD_tvcolumn0.add_attribute(cell0, 'text', 0)
+		self.win_OD_tvcolumn1.add_attribute(cell1, 'text', 1)
+		self.win_OD_tvcolumn2.add_attribute(cell2, 'text', 2)
 		#set treeview options
 		self.win_OD_treeview.set_search_column(0)
 		self.win_OD_tvcolumn0.set_sort_column_id(0)
@@ -3725,24 +3756,24 @@ class mainWindow:
 		#add treeview to scrolledwindow
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.add(self.win_OD_treeview)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.ALWAYS)
 		vbox=gtk.VBox()
-		vbox.pack_start(scrolledwindow)
+		vbox.pack_start(scrolledwindow,True,True,True)
 		hbox=gtk.HBox(False,4)		
 		#buttons
 		if extraDB == None:
 			button = gtk.Button(stock=gtk.STOCK_CANCEL)
 			button.connect("clicked", lambda w: self.win_OD.destroy())
-			hbox.pack_end(button,False)	
+			hbox.pack_end(button,False,True,True)	
 			button = gtk.Button(stock=gtk.STOCK_EDIT)
 			button.connect("clicked", self.openDatabaseEdit)
-			hbox.pack_end(button,False)
+			hbox.pack_end(button,False,True,True)
 			button = gtk.Button(stock=gtk.STOCK_DELETE)
 			button.connect("clicked", self.openDatabaseDel)
-			hbox.pack_end(button,False)
+			hbox.pack_end(button,False,True,True)
 			button = gtk.Button(stock=gtk.STOCK_OPEN)
 			button.connect("clicked", self.openDatabaseOpen)
-			hbox.pack_end(button,False)	
+			hbox.pack_end(button,False,True,True)
 		else:
 			label=gtk.Label(_("Search Name")+":")
 			self.namesearch = gtk.Entry()
@@ -3761,14 +3792,14 @@ class mainWindow:
 			
 			button = gtk.Button(stock=gtk.STOCK_OPEN)
 			button.connect("clicked", self.openDatabaseOpen)
-			hbox.pack_start(button,False)
+			hbox.pack_start(button,False,True,True)
 			button = gtk.Button(stock=gtk.STOCK_CLOSE)
 			button.connect("clicked", lambda w: self.win_OD.destroy())
-			hbox.pack_start(button,False)			
+			hbox.pack_start(button,False,True,True)
 			
 		#display window
 		self.win_OD_treeview.connect("row-activated", lambda w,e,f: self.openDatabaseOpen(w))
-		vbox.pack_start(hbox,False)
+		vbox.pack_start(hbox,False,True,True)
 		self.win_OD.add(vbox)
 		self.win_OD_treeview.set_model(self.listmodel)
 		self.win_OD.show_all()
@@ -3776,7 +3807,7 @@ class mainWindow:
 	
 	def openDatabaseSelect(self, selectstr, type):
 	
-		self.win_OD = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.win_OD = gtk.Window(gtk.WindowType.TOPLEVEL)
 		self.win_OD.set_icon_from_file(cfg.iconWindow)
 		self.win_OD.set_title(_('Select Database Entry'))
 		self.win_OD.set_size_request(400, 450)
@@ -3788,7 +3819,7 @@ class mainWindow:
 		
 		#selection
 		self.win_OD_selection = self.win_OD_treeview.get_selection()
-		self.win_OD_selection.set_mode(gtk.SELECTION_SINGLE)
+		self.win_OD_selection.set_mode(gtk.SelectionMode.SINGLE)
 		#treeview columns		
 		self.win_OD_tvcolumn0 = gtk.TreeViewColumn(_('Name'))
 		self.win_OD_tvcolumn1 = gtk.TreeViewColumn(_('Birth Date (Local)'))
@@ -3814,9 +3845,9 @@ class mainWindow:
 		self.win_OD_tvcolumn1.pack_start(cell1, True)
 		self.win_OD_tvcolumn2.pack_start(cell2, True)
 		#set the cell attributes to the listmodel column
-		self.win_OD_tvcolumn0.set_attributes(cell0, text=0)
-		self.win_OD_tvcolumn1.set_attributes(cell1, text=1)
-		self.win_OD_tvcolumn2.set_attributes(cell2, text=2)
+		self.win_OD_tvcolumn0.add_attribute(cell0, 'text', 0)
+		self.win_OD_tvcolumn1.add_attribute(cell1, 'text', 1)
+		self.win_OD_tvcolumn2.add_attribute(cell2, 'text', 2)
 		#set treeview options
 		self.win_OD_treeview.set_search_column(0)
 		self.win_OD_tvcolumn0.set_sort_column_id(0)
@@ -3825,19 +3856,19 @@ class mainWindow:
 		#add treeview to scrolledwindow
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.add(self.win_OD_treeview)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.ALWAYS)
 		vbox=gtk.VBox()
-		vbox.pack_start(scrolledwindow)
+		vbox.pack_start(scrolledwindow,True,True,True)
 		hbox=gtk.HBox()		
 		#buttons
 		button = gtk.Button(stock=gtk.STOCK_CANCEL)
 		button.connect("clicked", lambda w: self.openDatabaseSelectReject())
-		hbox.pack_end(button,False)	
+		hbox.pack_end(button,False,True,True)	
 		button = gtk.Button(selectstr)
 		button.connect("clicked", lambda w: self.openDatabaseSelectReturn(type))
-		hbox.pack_end(button,False)		
+		hbox.pack_end(button,False,True,True)		
 		#display window
-		vbox.pack_start(hbox,False)
+		vbox.pack_start(hbox,False,True,True)
 		self.win_OD.add(vbox)
 		self.win_OD_treeview.set_model(listmodel)
 		self.win_OD.show_all()
@@ -3953,7 +3984,7 @@ class mainWindow:
 			if self.DB[i]["id"] == model.get_value(iter,3):
 				self.ODDlist = self.DB[i]
 		name = self.ODDlist["name"]
-		dialog=gtk.Dialog(_('Question'),self.win_OD,gtk.DIALOG_DESTROY_WITH_PARENT,(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+		dialog=gtk.Dialog(_('Question'),self.win_OD,gtk.DialogFlags.DESTROY_WITH_PARENT,(gtk.STOCK_CANCEL, gtk.ResponseType.REJECT, gtk.STOCK_OK, gtk.ResponseType.ACCEPT))
 		dialog.connect("close", lambda w,e: dialog.destroy())
 		dialog.connect("response",self.openDatabaseDelDo)
 		dialog.vbox.pack_start(gtk.Label(_('Are you sure you want to delete')+' '+name+'?'),True,True,0)
@@ -3961,7 +3992,7 @@ class mainWindow:
 		return
 	
 	def openDatabaseDelDo(self, widget, response_id):
-		if response_id == gtk.RESPONSE_ACCEPT:
+		if response_id == gtk.ResponseType.ACCEPT:
 			#get id from selection
 			del_id = self.ODDlist["id"]
 			#delete database entry
@@ -4008,7 +4039,7 @@ class mainWindow:
 		en = db.getDatabase()
 		for i in range(len(en)):
 			if en[i]["name"] == self.name.get_text() and self.oDE_list["id"] != en[i]["id"]:
-				dialog=gtk.Dialog(_('Duplicate'),self.window2,0,(gtk.STOCK_OK, gtk.RESPONSE_DELETE_EVENT))
+				dialog=gtk.Dialog(_('Duplicate'),self.window2,0,(gtk.STOCK_OK, gtk.ResponseType.DELETE_EVENT))
 				dialog.set_icon_from_file(cfg.iconWindow)			
 				dialog.connect("response", lambda w,e: dialog.destroy())				
 				dialog.connect("close", lambda w,e: dialog.destroy())
@@ -4016,7 +4047,7 @@ class mainWindow:
 				dialog.show_all()				
 				return
 		#ask for confirmation
-		dialog=gtk.Dialog(_('Question'),self.window2,gtk.DIALOG_DESTROY_WITH_PARENT,(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+		dialog=gtk.Dialog(_('Question'),self.window2,gtk.DialogFlags.DESTROY_WITH_PARENT,(gtk.STOCK_CANCEL, gtk.ResponseType.REJECT, gtk.STOCK_OK, gtk.ResponseType.ACCEPT))
 		dialog.set_icon_from_file(cfg.iconWindow)
 		dialog.connect("close", lambda w,e: dialog.destroy())
 		dialog.connect("response",self.openDatabaseEditSave)
@@ -4025,7 +4056,7 @@ class mainWindow:
 		return	
 	
 	def openDatabaseEditSave(self, widget, response_id):
-		if response_id == gtk.RESPONSE_ACCEPT:
+		if response_id == gtk.ResponseType.ACCEPT:
 			#update chart data
 			self.updateChartData()
 			#set query to save			
@@ -4058,26 +4089,26 @@ class mainWindow:
 		print_op.connect("begin_print", self.doPrintBegin)
 		print_op.connect("draw_page", self.doPrintDraw)
 		print_op.set_export_filename("/tmp/OAOUT.pdf")
-		res = print_op.run(gtk.PRINT_OPERATION_ACTION_EXPORT, self.window)
-		#res = print_op.run(gtk.PRINT_OPERATION_ACTION_PRINT_DIALOG, self.window)
+		res = print_op.run(gtk.PrintOperationAction.EXPORT, self.window)
+		#res = print_op.run(gtk.PrintOperationAction.PRINT_DIALOG, self.window)
 		
-		if res == gtk.PRINT_OPERATION_RESULT_ERROR:
+		if res == gtk.PrintOperationResult.ERROR:
 			error_dialog = gtk.MessageDialog(parent,
-                                          gtk.DIALOG_DESTROY_WITH_PARENT,
-                                          gtk.MESSAGE_ERROR,
-      					  gtk.BUTTONS_CLOSE,
-      					  "Error printing:\n")
+										  gtk.DialogFlags.DESTROY_WITH_PARENT,
+										  gtk.MessageType.ERROR,
+							gtk.ButtonsType.CLOSE,
+							"Error printing:\n")
 			error_dialog.connect("response", lambda w,id: w.destroy())
 			error_dialog.show()
 			
-		elif res == gtk.PRINT_OPERATION_RESULT_APPLY:
+		elif res == gtk.PrintOperationResult.APPLY:
 			self.print_settings = print_op.get_print_settings()
 			
 		#gtkunixprint
 		import gtkunixprint
 		gup = gtkunixprint.PrintUnixDialog("Printing OpenAstro.org",self.window)
 		res = gup.run()
-		if res == gtk.RESPONSE_OK:
+		if res == gtk.ResponseType.OK:
 			#print button
 			printer = gup.get_selected_printer()
 			settings = gup.get_settings()
@@ -4094,37 +4125,37 @@ class mainWindow:
 
 			#send file to print job
 			def printer_callback(print_job, data, errormsg):
-				print "printing job: %s" %(print_job.get_title())
+				print(("printing job: {}".format(print_job.get_title())))
 				if errormsg:
-					print errormsg
+					print(errormsg)
 					
 			if printer.accepts_pdf():
 				#printer accepts PDF
-				print "Printing PDF file /tmp/OAOUT.pdf"
+				print("Printing PDF file /tmp/OAOUT.pdf")
 				printjob.send(printer_callback)
 				#printjob.set_source_file("/tmp/OAOUT.pdf")
 			elif printer.accepts_ps():
 				#printer accepts PS
-				print "PS printing not made yet"
+				print("PS printing not made yet")
 			else:
 				#no format support
-				print "Printer does not support PDF or PS printing"
+				print("Printer does not support PDF or PS printing")
 			
 			gup.destroy()		
 			
-		elif res == gtk.RESPONSE_APPLY:
+		elif res == gtk.ResponseType.APPLY:
 			#print preview button
-			print "print preview button?"
+			print("print preview button?")
 			gup.destroy()
 		else:
-			print "cancelled print"
+			print("cancelled print")
 			gup.destroy()
 
 	def doPrintBegin(self, operation, context):
 		operation.set_n_pages(1)
 		operation.set_use_full_page(False)
 		ps = gtk.PageSetup()
-		ps.set_orientation(gtk.PAGE_ORIENTATION_PORTRAIT)
+		ps.set_orientation(gtk.PageOrientation.PORTRAIT)
 		ps.set_paper_size_and_default_margins(gtk.PaperSize(gtk.PAPER_NAME_A4))
 
 		if self.print_settings is None:
@@ -4174,16 +4205,16 @@ class mainWindow:
 		table.set_border_width(10)
 
 		#use online geocoding option
-		table.attach(gtk.Label(_("Use Online Geocoding\n(ws.geonames.org)")), 0, 1, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
+		table.attach(gtk.Label(_("Use Online Geocoding\n(ws.geonames.org)")), 0, 1, 0, 1, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)		
 		data['use_geonames.org'] = gtk.CheckButton()
-		table.attach(data['use_geonames.org'], 1, 2, 0, 1, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(data['use_geonames.org'], 1, 2, 0, 1, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		if db.getAstrocfg('use_geonames.org') == "1":
 			data['use_geonames.org'].set_active(True)
 		
 		#house system
-		data['houses_system'] = gtk.combo_box_new_text()
-		table.attach(gtk.Label(_('Houses System')), 0, 1, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['houses_system'], 1, 2, 2, 3, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		data['houses_system'] = gtk.ComboBoxText()
+		table.attach(gtk.Label(_('Houses System')), 0, 1, 2, 3, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)		
+		table.attach(data['houses_system'], 1, 2, 2, 3, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		hsys={
 				"P":"Placidus",
 				"K":"Koch",
@@ -4209,9 +4240,9 @@ class mainWindow:
 		data['houses_system'].set_active(active)
 		
 		#position calculation (geo,truegeo,topo,helio)		
-		data['postype'] = gtk.combo_box_new_text()
-		table.attach(gtk.Label(_('Position Calculation')), 0, 1, 4, 5, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['postype'], 1, 2, 4, 5, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		data['postype'] = gtk.ComboBoxText()
+		table.attach(gtk.Label(_('Position Calculation')), 0, 1, 4, 5, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)		
+		table.attach(data['postype'], 1, 2, 4, 5, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		postype={
 		
 				"geo":openAstro.label["apparent_geocentric"]+" "+_("(default)"),
@@ -4228,9 +4259,9 @@ class mainWindow:
 		data['postype'].set_active(active)
 
 		#chart view (traditional,european)		
-		data['chartview'] = gtk.combo_box_new_text()
-		table.attach(gtk.Label(_('Chart View')), 0, 1, 6, 7, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['chartview'], 1, 2, 6, 7, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		data['chartview'] = gtk.ComboBoxText()
+		table.attach(gtk.Label(_('Chart View')), 0, 1, 6, 7, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)		
+		table.attach(data['chartview'], 1, 2, 6, 7, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		chartview={
 				"traditional":_("Planets in Zodiac"),
 				"european":_("Planets around Zodiac")
@@ -4244,9 +4275,9 @@ class mainWindow:
 		data['chartview'].set_active(active)
 
 		#zodiac type (tropical, sidereal)	
-		data['zodiactype'] = gtk.combo_box_new_text()
-		table.attach(gtk.Label(_('Zodiac Type')), 0, 1, 8, 9, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['zodiactype'], 1, 2, 8, 9, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		data['zodiactype'] = gtk.ComboBoxText()
+		table.attach(gtk.Label(_('Zodiac Type')), 0, 1, 8, 9, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)		
+		table.attach(data['zodiactype'], 1, 2, 8, 9, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		chartview={
 				"tropical":_("Tropical"),
 				"sidereal":_("Sidereal")
@@ -4260,7 +4291,7 @@ class mainWindow:
 		data['zodiactype'].set_active(active)
 		
 		#sidereal mode	
-		data['siderealmode'] = gtk.combo_box_new_text()
+		data['siderealmode'] = gtk.ComboBoxText()
 		if db.astrocfg['zodiactype'] != 'sidereal':
 			data['siderealmode'].set_sensitive(False)
 		def zodiactype_changed(button):
@@ -4269,8 +4300,8 @@ class mainWindow:
 			else:
 				data['siderealmode'].set_sensitive(True)
 		data['zodiactype'].connect("changed",zodiactype_changed)
-		table.attach(gtk.Label(_('Sidereal Mode')), 0, 1, 12, 13, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)		
-		table.attach(data['siderealmode'], 1, 2, 12, 13, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		table.attach(gtk.Label(_('Sidereal Mode')), 0, 1, 12, 13, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)		
+		table.attach(data['siderealmode'], 1, 2, 12, 13, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		self.siderealmode_chartview={
 				"FAGAN_BRADLEY":_("Fagan Bradley"),
 				"LAHIRI":_("Lahiri"),
@@ -4321,9 +4352,9 @@ class mainWindow:
 		data['siderealmode'].set_active(active)
 		
 		#language		
-		data['language'] = gtk.combo_box_new_text()
-		table.attach(gtk.Label(_('Language')), 0, 1, 16, 17, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
-		table.attach(data['language'], 1, 2, 16, 17, xoptions=gtk.SHRINK, yoptions=gtk.SHRINK, xpadding=10)
+		data['language'] = gtk.ComboBoxText()
+		table.attach(gtk.Label(_('Language')), 0, 1, 16, 17, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
+		table.attach(data['language'], 1, 2, 16, 17, xoptions=gtk.AttachOptions.SHRINK, yoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		
 		data['language'].append_text(_("Default"))
 		active=0
@@ -4336,14 +4367,14 @@ class mainWindow:
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
 		self.win_SC.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
 		#ok button
 		button = gtk.Button(stock=gtk.STOCK_OK)
 		button.connect("clicked", self.settingsConfigurationSubmit, data)
-		button.set_flags(gtk.CAN_DEFAULT)		
+		button.set_can_default(True)		
 		self.win_SC.action_area.pack_start(button, True, True, 0)
 		button.grab_default()		
 
@@ -4410,7 +4441,7 @@ class mainWindow:
 		# enable settingslocationmode
 		self.settingsLocationMode = True
 		# create a new window
-		self.win_SL = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.win_SL = gtk.Window(gtk.WindowType.TOPLEVEL)
 		self.win_SL.set_icon_from_file(cfg.iconWindow)
 		self.win_SL.set_title(_("Please Set Your Home Location"))
 		self.win_SL.connect("delete_event", lambda w,e: self.settingsLocationDestroy())
@@ -4451,7 +4482,7 @@ class mainWindow:
 			self.geoCC = gtk.Entry(2)
 			self.geoCC.set_width_chars(2)
 			self.geoCC.set_text(openAstro.home_countrycode)
-			hbox.pack_start(self.geoCC)	
+			hbox.pack_start(self.geoCC,True,True,True)	
 			table.attach(hbox, 0, 2, 0, 1)
 		else:
 			hbox=gtk.HBox()
@@ -4462,9 +4493,9 @@ class mainWindow:
 			self.contbox = gtk.ComboBox()
 			self.contstore = gtk.ListStore(str,str)
 			cell = gtk.CellRendererText()
-			self.contbox.pack_start(cell)
+			self.contbox.pack_start(cell,True)
 			self.contbox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.contbox)
+			hbox.pack_start(self.contbox,True,True,True)
 			self.contbox.set_wrap_width(1)
 
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
@@ -4480,31 +4511,31 @@ class mainWindow:
 				i += 1
 			db.gclose()
 			self.contbox.set_model(self.contstore)
-        
+		
 			#countries
 			self.countrybox = gtk.ComboBox()
 			cell = gtk.CellRendererText()
-			self.countrybox.pack_start(cell)
+			self.countrybox.pack_start(cell,True)
 			self.countrybox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.countrybox)
+			hbox.pack_start(self.countrybox,True,True,True)
 			self.countrybox.set_wrap_width(1) 
 			self.countrybox.connect('changed', self.eventDataChangedCountrybox)
 
 			#provinces
 			self.provbox = gtk.ComboBox()
 			cell = gtk.CellRendererText()
-			self.provbox.pack_start(cell)
+			self.provbox.pack_start(cell,True)
 			self.provbox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.provbox)
+			hbox.pack_start(self.provbox,True,True,True)
 			self.provbox.set_wrap_width(1) 
 			self.provbox.connect('changed', self.eventDataChangedProvbox)
 
 			#cities
 			self.citybox = gtk.ComboBox()
 			cell = gtk.CellRendererText()
-			self.citybox.pack_start(cell)
+			self.citybox.pack_start(cell,True)
 			self.citybox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.citybox)
+			hbox.pack_start(self.citybox,True,True,True)
 			self.citybox.set_wrap_width(2) 
 			self.citybox.connect('changed', self.eventDataChangedCitybox)
 
@@ -4515,10 +4546,10 @@ class mainWindow:
 		buttonbox = gtk.HBox(False, 5)
 		table.attach(buttonbox, 1, 2, 4, 5)
  
-  		#ok button
+		  #ok button
 		button = gtk.Button(stock=gtk.STOCK_OK)
 		button.connect("clicked", self.settingsLocationSubmit)
-		button.set_flags(gtk.CAN_DEFAULT)
+		button.set_can_default(True)
 		buttonbox.pack_start(button,False,False,0)
 		button.grab_default()
 		
@@ -4635,15 +4666,15 @@ class mainWindow:
 		
 		#description
 		label = gtk.Label(_("Deg"))
-		table.attach(label, 1, 2, 0, 1, xoptions=gtk.FILL, xpadding=10)
+		table.attach(label, 1, 2, 0, 1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 		label = gtk.Label(_("Aspect Name"))
-		table.attach(label, 2, 3, 0, 1, xoptions=gtk.FILL, xpadding=10)
+		table.attach(label, 2, 3, 0, 1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 		label = gtk.Label(_("Visible\nin Circle"))
-		table.attach(label, 3, 4, 0, 1, xoptions=gtk.FILL, xpadding=10)
+		table.attach(label, 3, 4, 0, 1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 		label = gtk.Label(_("Visible\nin Grid"))
-		table.attach(label, 4, 5, 0, 1, xoptions=gtk.FILL, xpadding=10)
+		table.attach(label, 4, 5, 0, 1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 		label = gtk.Label(_("Orb"))
-		table.attach(label, 5, 6, 0, 1, xoptions=gtk.FILL, xpadding=10)		
+		table.attach(label, 5, 6, 0, 1, xoptions=gtk.AttachOptions.FILL, xpadding=10)		
 		
 		data = []
 		x=1
@@ -4659,34 +4690,35 @@ class mainWindow:
 			data[-1]['name'].set_max_length(25)
 			data[-1]['name'].set_width_chars(15)
 			data[-1]['name'].set_text(openAstro.aspects[i]['name'])
-			table.attach(data[-1]['icon'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(data[-1]['degree_str'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(data[-1]['name'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
+			table.attach(data[-1]['icon'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(data[-1]['degree_str'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(data[-1]['name'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 			data[-1]['visible'] = gtk.CheckButton()
 			if openAstro.aspects[i]['visible'] is 1:
 				data[-1]['visible'].set_active(True)
-			table.attach(data[-1]['visible'], 3, 4, x, x+1, xoptions=gtk.EXPAND, xpadding=2, ypadding=2)
+			table.attach(data[-1]['visible'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.EXPAND, xpadding=2, ypadding=2)
 			data[-1]['visible_grid'] = gtk.CheckButton()
 			if openAstro.aspects[i]['visible_grid'] is 1:
 				data[-1]['visible_grid'].set_active(True)
-			table.attach(data[-1]['visible_grid'], 4, 5, x, x+1, xoptions=gtk.EXPAND, xpadding=2, ypadding=2)
-			data[-1]['orb'] = gtk.Entry(4)
+			table.attach(data[-1]['visible_grid'], 4, 5, x, x+1, xoptions=gtk.AttachOptions.EXPAND, xpadding=2, ypadding=2)
+			data[-1]['orb'] = gtk.Entry()
+			data[-1]['orb'].set_max_length(4)
 			data[-1]['orb'].set_width_chars(4)
 			data[-1]['orb'].set_text(str(openAstro.aspects[i]['orb']))
-			table.attach(data[-1]['orb'], 5, 6, x, x+1, xoptions=gtk.FILL, xpadding=10)					
+			table.attach(data[-1]['orb'], 5, 6, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)					
 			x=x+1
 		
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
 		self.win_SA.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
 		#ok button
 		button = gtk.Button(stock=gtk.STOCK_OK)
 		button.connect("clicked", self.settingsAspectsSubmit, data)
-		button.set_flags(gtk.CAN_DEFAULT)		
+		button.set_can_default(True)		
 		self.win_SA.action_area.pack_start(button, True, True, 0)
 		button.grab_default()		
 
@@ -4751,11 +4783,11 @@ class mainWindow:
 		label = gtk.Label(_("Planet Label"))
 		table.attach(label, 0, 1, 0, 1)
 		label = gtk.Label(_("Symbol"))
-		table.attach(label, 1, 2, 0, 1, xoptions=gtk.SHRINK, xpadding=10)
+		table.attach(label, 1, 2, 0, 1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		label = gtk.Label(_("Aspect Line"))
-		table.attach(label, 2, 3, 0, 1, xoptions=gtk.SHRINK, xpadding=10)
+		table.attach(label, 2, 3, 0, 1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 		label = gtk.Label(_("Aspect Grid"))
-		table.attach(label, 3, 4, 0, 1, xoptions=gtk.SHRINK, xpadding=10)
+		table.attach(label, 3, 4, 0, 1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 						
 		data = []
 		x=1
@@ -4773,13 +4805,13 @@ class mainWindow:
 					label = gtk.Label(_("Point Label"))
 				else:
 					label = gtk.Label(_("Angle Label"))	
-				table.attach(label, 0, 1, x, x+1, xoptions=gtk.SHRINK, xpadding=10)
+				table.attach(label, 0, 1, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 				label = gtk.Label(_("Symbol"))
-				table.attach(label, 1, 2, x, x+1, xoptions=gtk.SHRINK, xpadding=10)
+				table.attach(label, 1, 2, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 				label = gtk.Label(_("Aspect Line"))
-				table.attach(label, 2, 3, x, x+1, xoptions=gtk.SHRINK, xpadding=10)
+				table.attach(label, 2, 3, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 				label = gtk.Label(_("Aspect Grid"))
-				table.attach(label, 3, 4, x, x+1, xoptions=gtk.SHRINK, xpadding=10)				
+				table.attach(label, 3, 4, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)				
 				x=x+1
 			data.append({})
 			data[-1]['id'] = openAstro.planets[i]['id']
@@ -4788,34 +4820,34 @@ class mainWindow:
 			data[-1]['label'].set_width_chars(15)
 			data[-1]['label'].set_text(openAstro.planets[i]['label'])
 			#data[-1]['label'].set_alignment(xalign=0.0, yalign=0.5)
-			table.attach(data[-1]['label'], 0, 1, x, x+1, xoptions=gtk.SHRINK, xpadding=10)
+			table.attach(data[-1]['label'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 			data[-1]['visible'] = gtk.CheckButton()
 			if openAstro.planets[i]['visible'] is 1:
 				data[-1]['visible'].set_active(True)
-			table.attach(data[-1]['visible'], 1, 2, x, x+1, xoptions=gtk.SHRINK, xpadding=2, ypadding=2)
+			table.attach(data[-1]['visible'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=2, ypadding=2)
 			
 			data[-1]['visible_aspect_line'] = gtk.CheckButton()
 			if openAstro.planets[i]['visible_aspect_line'] is 1:
 				data[-1]['visible_aspect_line'].set_active(True)
-			table.attach(data[-1]['visible_aspect_line'], 2, 3, x, x+1, xoptions=gtk.SHRINK, xpadding=2, ypadding=2)	
+			table.attach(data[-1]['visible_aspect_line'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=2, ypadding=2)	
 			
 			data[-1]['visible_aspect_grid'] = gtk.CheckButton()
 			if openAstro.planets[i]['visible_aspect_grid'] is 1:
 				data[-1]['visible_aspect_grid'].set_active(True)
-			table.attach(data[-1]['visible_aspect_grid'], 3, 4, x, x+1, xoptions=gtk.SHRINK, xpadding=2, ypadding=2)	
+			table.attach(data[-1]['visible_aspect_grid'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=2, ypadding=2)	
 			x=x+1
 		
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
 		self.win_SP.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
 		#ok button
 		button = gtk.Button(stock=gtk.STOCK_OK)
 		button.connect("clicked", self.settingsPlanetsSubmit, data)
-		button.set_flags(gtk.CAN_DEFAULT)		
+		button.set_can_default(True)		
 		self.win_SP.action_area.pack_start(button, True, True, 0)
 		button.grab_default()
 		
@@ -4832,7 +4864,7 @@ class mainWindow:
 		for i in range(len(data)):
 			sql = 'UPDATE settings_planet SET label = "%s"'%(data[i]['label'].get_text())
 			radio={"visible":0,"visible_aspect_line":0,"visible_aspect_grid":0}
-			for key,val in radio.iteritems():
+			for key,val in radio.items():
 				if data[i][key].get_active():
 					radio[key]=1
 				sql += ', %s = %s' % (key,radio[key])
@@ -4849,7 +4881,7 @@ class mainWindow:
 	""" Menu item to set color options (settingsColors,	settingsColorsSubmit) """
 	def settingsColorsReset(self, widget, id):
 		self.SCdata[id]['code'].set_text(db.defaultColors[self.SCdata[id]['key']])
-		self.SCdata[id]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(db.defaultColors[self.SCdata[id]['key']]))
+		self.SCdata[id]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(db.defaultColors[self.SCdata[id]['key']]))
 		return
 			
 	def settingsColors(self, widget):
@@ -4875,201 +4907,236 @@ class mainWindow:
 		self.SCdata = []
 		delimiter="--------------------------------------------"
 		
-		#Zodiac background colors
-		table.attach(gtk.Label(delimiter),0,4,0,1,xoptions=gtk.FILL,xpadding=10)
-		table.attach(gtk.Label(_("Zodiac Background Colors")),0,4,1,2,xoptions=gtk.FILL,xpadding=10)
-		table.attach(gtk.Label(delimiter),0,4,2,3,xoptions=gtk.FILL,xpadding=10)
-		x=3	
-		for i in range(12):
+		#Basic color scheme stuff
+		table.attach(gtk.Label(delimiter),0,4,0,1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
+		table.attach(gtk.Label(_("Basic Chart Colors")),0,4,1,2,xoptions=gtk.AttachOptions.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,2,3,xoptions=gtk.AttachOptions.FILL,xpadding=10)
+		x=3
+		for i in range(2):
 			self.SCdata.append({})
-			self.SCdata[-1]['key']="zodiac_bg_%s"%(i)
-			self.SCdata[-1]['name']=gtk.Label(openAstro.zodiac[i])
-			self.SCdata[-1]['code'] = gtk.Entry(25)
+			self.SCdata[-1]['key']="paper_color_%s"%(i)
+			self.SCdata[-1]['name']=gtk.Label("Paper Color %s"%(i))
+			self.SCdata[-1]['code'] = gtk.Entry()
+			self.SCdata[-1]['code'].set_max_length(25)
 			self.SCdata[-1]['code'].set_width_chars(10)
-			self.SCdata[-1]['code'].set_text(openAstro.colors["zodiac_bg_%s"%(i)])
-			self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["zodiac_bg_%s"%(i)]))
+			self.SCdata[-1]['code'].set_text(openAstro.colors["paper_color_%s"%(i)])
+			self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gtk.gdk.color_parse(openAstro.colors["paper_color_%s"%(i)]))
 			self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 			self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 			self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 			self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 				
-			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			x+=1
+		
+		#Zodiac background colors
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
+		x+=1
+		table.attach(gtk.Label(_("Zodiac Background Colors")),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
+		x+=1
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
+		x+=1
+		for i in range(12):
+			self.SCdata.append({})
+			self.SCdata[-1]['key']="zodiac_bg_%s"%(i)
+			self.SCdata[-1]['name']=gtk.Label(openAstro.zodiac[i])
+			self.SCdata[-1]['code'] = gtk.Entry()
+			self.SCdata[-1]['code'].set_max_length(25)
+			self.SCdata[-1]['code'].set_width_chars(10)
+			self.SCdata[-1]['code'].set_text(openAstro.colors["zodiac_bg_%s"%(i)])
+			self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["zodiac_bg_%s"%(i)]))
+			self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
+			self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
+			self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
+			self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
+				
+			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 			x+=1
 		
 		#Circle and Line Colors
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(_("Circles and Lines Colors")),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(_("Circles and Lines Colors")),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
 		for i in range(3):
 			self.SCdata.append({})
 			self.SCdata[-1]['key']="zodiac_radix_ring_%s"%(i)
 			self.SCdata[-1]['name']=gtk.Label("%s %s" %(_("Radix Ring"),(i+1)) )
-			self.SCdata[-1]['code'] = gtk.Entry(25)
+			self.SCdata[-1]['code'] = gtk.Entry()
+			self.SCdata[-1]['code'].set_max_length(25)
 			self.SCdata[-1]['code'].set_width_chars(10)
 			self.SCdata[-1]['code'].set_text(openAstro.colors["zodiac_radix_ring_%s"%(i)])
-			self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["zodiac_radix_ring_%s"%(i)]))
+			self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["zodiac_radix_ring_%s"%(i)]))
 			self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 			self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 			self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 			self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 				
-			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 			x+=1
 			
 		for i in range(4):
 			self.SCdata.append({})
 			self.SCdata[-1]['key']="zodiac_transit_ring_%s"%(i)
 			self.SCdata[-1]['name']=gtk.Label("%s %s" %(_("Transit Ring"),(i+1)) )
-			self.SCdata[-1]['code'] = gtk.Entry(25)
+			self.SCdata[-1]['code'] = gtk.Entry()
+			self.SCdata[-1]['code'].set_max_length(25)
 			self.SCdata[-1]['code'].set_width_chars(10)
 			self.SCdata[-1]['code'].set_text(openAstro.colors["zodiac_transit_ring_%s"%(i)])
-			self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["zodiac_transit_ring_%s"%(i)]))
+			self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["zodiac_transit_ring_%s"%(i)]))
 			self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 			self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 			self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 			self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 				
-			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 			x+=1								
 		
 		self.SCdata.append({})
 		self.SCdata[-1]['key']="houses_radix_line"
 		self.SCdata[-1]['name']=gtk.Label(_("Cusp Radix"))
-		self.SCdata[-1]['code'] = gtk.Entry(25)
+		self.SCdata[-1]['code'] = gtk.Entry()
+		self.SCdata[-1]['code'].set_max_length(25)
 		self.SCdata[-1]['code'].set_width_chars(10)
 		self.SCdata[-1]['code'].set_text(openAstro.colors["houses_radix_line"])
-		self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["houses_radix_line"]))
+		self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["houses_radix_line"]))
 		self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 		self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 		self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 		self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 			
-		table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-		table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-		table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-		table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 		x+=1
 		
 		self.SCdata.append({})
 		self.SCdata[-1]['key']="houses_transit_line"
 		self.SCdata[-1]['name']=gtk.Label(_("Cusp Transit"))
-		self.SCdata[-1]['code'] = gtk.Entry(25)
+		self.SCdata[-1]['code'] = gtk.Entry()
+		self.SCdata[-1]['code'].set_max_length(25)
 		self.SCdata[-1]['code'].set_width_chars(10)
 		self.SCdata[-1]['code'].set_text(openAstro.colors["houses_transit_line"])
-		self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["houses_transit_line"]))
+		self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["houses_transit_line"]))
 		self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 		self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 		self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 		self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 			
-		table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-		table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-		table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-		table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+		table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 		x+=1		
 
 		#Zodiac icon colors
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(_("Zodiac Icon Colors")),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(_("Zodiac Icon Colors")),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
 		for i in range(12):
 			self.SCdata.append({})
 			self.SCdata[-1]['key']="zodiac_icon_%s"%(i)
 			self.SCdata[-1]['name']=gtk.Label(openAstro.zodiac[i])
-			self.SCdata[-1]['code'] = gtk.Entry(25)
+			self.SCdata[-1]['code'] = gtk.Entry()
+			self.SCdata[-1]['code'].set_max_length(25)
 			self.SCdata[-1]['code'].set_width_chars(10)
 			self.SCdata[-1]['code'].set_text(openAstro.colors["zodiac_icon_%s"%(i)])
-			self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["zodiac_icon_%s"%(i)]))
+			self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["zodiac_icon_%s"%(i)]))
 			self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 			self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 			self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 			self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 				
-			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 			x+=1			
 
 		#Aspects colors
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(_("Aspects Colors")),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(_("Aspects Colors")),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
 		for i in range(len(openAstro.aspects)):
 			self.SCdata.append({})
 			self.SCdata[-1]['key']="aspect_%s"%(openAstro.aspects[i]['degree'])
 			self.SCdata[-1]['name']=gtk.Label(openAstro.aspects[i]['name'])
-			self.SCdata[-1]['code'] = gtk.Entry(25)
+			self.SCdata[-1]['code'] = gtk.Entry()
+			self.SCdata[-1]['code'].set_max_length(25)
 			self.SCdata[-1]['code'].set_width_chars(10)
 			self.SCdata[-1]['code'].set_text(openAstro.colors["aspect_%s"%(openAstro.aspects[i]['degree'])])
 
-			self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["aspect_%s"%(openAstro.aspects[i]['degree'])]))
+			self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["aspect_%s"%(openAstro.aspects[i]['degree'])]))
 			self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 			self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 			self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 			self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 				
-			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 			x+=1
 
 		#Planet colors
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(_("Planet Colors")),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(_("Planet Colors")),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
-		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.FILL,xpadding=10)
+		table.attach(gtk.Label(delimiter),0,4,x,x+1,xoptions=gtk.AttachOptions.FILL,xpadding=10)
 		x+=1
 		for i in range(len(openAstro.planets)):
 			self.SCdata.append({})
 			self.SCdata[-1]['key']="planet_%s"%(i)
 			self.SCdata[-1]['name']=gtk.Label(openAstro.planets[i]['name'])
-			self.SCdata[-1]['code'] = gtk.Entry(25)
+			self.SCdata[-1]['code'] = gtk.Entry()
+			self.SCdata[-1]['code'].set_max_length(25)
 			self.SCdata[-1]['code'].set_width_chars(10)
 			self.SCdata[-1]['code'].set_text(openAstro.colors["planet_%s"%(i)])
-			self.SCdata[-1]['code'].modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(openAstro.colors["planet_%s"%(i)]) )
+			self.SCdata[-1]['code'].modify_base(gtk.StateType.NORMAL, gdk.color_parse(openAstro.colors["planet_%s"%(i)]) )
 			self.SCdata[-1]['button'] = gtk.Button(stock=gtk.STOCK_SELECT_COLOR)
 			self.SCdata[-1]['button'].connect("clicked", self.settingsColorsChanger, len(self.SCdata)-1)
 			self.SCdata[-1]['reset'] = gtk.Button(_("Default"))
 			self.SCdata[-1]['reset'].connect("clicked", self.settingsColorsReset, len(self.SCdata)-1)
 				
-			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.FILL, xpadding=10)
-			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['name'], 0, 1, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['code'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['button'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
+			table.attach(self.SCdata[-1]['reset'], 3, 4, x, x+1, xoptions=gtk.AttachOptions.FILL, xpadding=10)
 			x+=1
 		
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
 		self.win_SC.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
 		#ok button
 		button = gtk.Button(stock=gtk.STOCK_OK)
 		button.connect("clicked", self.settingsColorsSubmit)
-		button.set_flags(gtk.CAN_DEFAULT)		
+		button.set_can_default(True)		
 		self.win_SC.action_area.pack_start(button, True, True, 0)
 		button.grab_default()		
 
@@ -5082,20 +5149,20 @@ class mainWindow:
 		return
 	
 	def settingsColorsChanger(self, widget, count):
-		input_color = gtk.gdk.color_parse(self.SCdata[count]["code"].get_text())
+		input_color = gdk.color_parse(self.SCdata[count]["code"].get_text())
 		
 		self.colorseldlg = gtk.ColorSelectionDialog(_("Please select a color"))
 		colorsel = self.colorseldlg.colorsel
 		colorsel.set_current_color(input_color)
 		colorsel.set_has_palette(True)
 		response = self.colorseldlg.run()
-		if response == gtk.RESPONSE_OK:
+		if response == gtk.ResponseType.OK:
 			output_color = colorsel.get_current_color()
 			r=int( output_color.red / 257 )
 			g=int( output_color.green / 257 )
 			b=int( output_color.blue / 257 )
 			self.SCdata[count]["code"].set_text("#%02X%02X%02X"%(r,g,b))
-			self.SCdata[count]['code'].modify_base(gtk.STATE_NORMAL, output_color)
+			self.SCdata[count]['code'].modify_base(gtk.StateType.NORMAL, output_color)
 		self.colorseldlg.hide()
 		return
 	
@@ -5110,6 +5177,7 @@ class mainWindow:
 		db.query(query)
 		#update colors
 		openAstro.colors = db.getColors()
+		print(openAstro.colors)
 		#update chart
 		self.updateChart()
 		#destroy window
@@ -5141,13 +5209,13 @@ class mainWindow:
 		label = gtk.Label(_("Label"))
 		table.attach(label, 0, 1, 0, 1)
 		label = gtk.Label(_("Value"))
-		table.attach(label, 1, 2, 0, 1, xoptions=gtk.SHRINK, xpadding=10)
+		table.attach(label, 1, 2, 0, 1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
 						
 		self.SLdata = []
 		x=1
-		keys = openAstro.label.keys()
+		keys = list(openAstro.label.keys())
 		keys.sort()
-        	for key in keys:
+		for key in keys:
 			value=openAstro.label[key]
 			self.SLdata.append({})
 			self.SLdata[-1]['name'] = key
@@ -5157,22 +5225,22 @@ class mainWindow:
 			self.SLdata[-1]['value'].set_text(value)
 			self.SLdata[-1]['reset'] = gtk.Button(_("Default"))
 			self.SLdata[-1]['reset'].connect("clicked", self.settingsLabelReset, len(self.SLdata)-1)
-			table.attach(gtk.Label(key), 0, 1, x, x+1, xoptions=gtk.SHRINK, xpadding=10)
-			table.attach(self.SLdata[-1]['value'], 1, 2, x, x+1, xoptions=gtk.SHRINK, xpadding=2, ypadding=2)
-			table.attach(self.SLdata[-1]['reset'], 2, 3, x, x+1, xoptions=gtk.SHRINK, xpadding=2, ypadding=2)
+			table.attach(gtk.Label(key), 0, 1, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=10)
+			table.attach(self.SLdata[-1]['value'], 1, 2, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=2, ypadding=2)
+			table.attach(self.SLdata[-1]['reset'], 2, 3, x, x+1, xoptions=gtk.AttachOptions.SHRINK, xpadding=2, ypadding=2)
 			x=x+1
 		
 		#make the ui layout with ok button
 		scrolledwindow = gtk.ScrolledWindow()
 		scrolledwindow.set_border_width(5)
-		scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scrolledwindow.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
 		self.win_SL.vbox.pack_start(scrolledwindow, True, True, 0)
 		scrolledwindow.add_with_viewport(table)
 		
 		#ok button
 		button = gtk.Button(stock=gtk.STOCK_OK)
 		button.connect("clicked", self.settingsLabelSubmit, self.SLdata)
-		button.set_flags(gtk.CAN_DEFAULT)		
+		button.set_can_default(True)		
 		self.win_SL.action_area.pack_start(button, True, True, 0)
 		button.grab_default()
 		
@@ -5336,9 +5404,9 @@ class mainWindow:
 		self.actiongroup.add_radio_actions([
 			('z80', None, '_80%', None,'80%', 0),
 			('z100', gtk.STOCK_ZOOM_100, '_100%', None,'100%', 1),
-         ('z150', None, '_150%', None,'150%', 2),
-         ('z200', None, '_200%', None,'200%', 3),
-         ], 1, self.zoom)
+		 ('z150', None, '_150%', None,'150%', 2),
+		 ('z200', None, '_200%', None,'200%', 3),
+		 ], 1, self.zoom)
 	
 		#create history actions
 		history=db.history
@@ -5352,7 +5420,7 @@ class mainWindow:
 				label='empty'
 				visible=False
 				list=[]
-			self.uimanager.add_ui(self.ui_mid_history, '/MenuBar/File/History', 'history%i'%(i), 'history%i'%(i), gtk.UI_MANAGER_MENUITEM, False)
+			self.uimanager.add_ui(self.ui_mid_history, '/MenuBar/File/History', 'history%i'%(i), 'history%i'%(i), gtk.UIManagerItemType.MENUITEM, False)
 			action=gtk.Action('history%i'%(i),label,None,False)
 			action.connect('activate',self.updateChartList,list)
 			action.set_visible(visible)			
@@ -5361,7 +5429,7 @@ class mainWindow:
 		#create quickdatabaseopen actions
 		self.DB = db.getDatabase()
 		for i in range(len(self.DB)):
-			self.uimanager.add_ui(self.ui_mid_quickopendatabase, '/MenuBar/Event/QuickOpenDatabase', 'quickopendatabase%s'%(i), 'quickopendatabase%s'%(i), gtk.UI_MANAGER_MENUITEM, False)
+			self.uimanager.add_ui(self.ui_mid_quickopendatabase, '/MenuBar/Event/QuickOpenDatabase', 'quickopendatabase%s'%(i), 'quickopendatabase%s'%(i), gtk.UIManagerItemType.MENUITEM, False)
 			action=gtk.Action('quickopendatabase%s'%(i),self.DB[i]["name"],None,False)
 			action.connect('activate',self.updateChartList,self.DB[i])
 			action.set_visible(True)
@@ -5404,7 +5472,7 @@ class mainWindow:
 
 	def eventData(self, widget, edit=False):
 		# create a new window
-		self.window2 = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.window2 = gtk.Window(gtk.WindowType.TOPLEVEL)
 		self.window2.set_icon_from_file(cfg.iconWindow)
 		self.window2.set_title(_("Edit Event Details"))
 		self.window2.connect("delete_event", lambda w,e: self.window2.destroy())
@@ -5475,9 +5543,9 @@ class mainWindow:
 			self.contbox = gtk.ComboBox()
 			self.contstore = gtk.ListStore(str,str)
 			cell = gtk.CellRendererText()
-			self.contbox.pack_start(cell)
+			self.contbox.pack_start(cell,True)
 			self.contbox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.contbox)
+			hbox.pack_start(self.contbox,True,True,True)
 			self.contbox.set_wrap_width(1)
 
 			sql = 'SELECT * FROM continent ORDER BY name ASC'
@@ -5495,31 +5563,31 @@ class mainWindow:
 				i += 1
 			db.gclose()
 			self.contbox.set_model(self.contstore)
-        
+		
 			#countries
 			self.countrybox = gtk.ComboBox()
 			cell = gtk.CellRendererText()
-			self.countrybox.pack_start(cell)
+			self.countrybox.pack_start(cell,True)
 			self.countrybox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.countrybox)
+			hbox.pack_start(self.countrybox,True,True,True)
 			self.countrybox.set_wrap_width(1) 
 			self.countrybox.connect('changed', self.eventDataChangedCountrybox)
 
 			#provinces
 			self.provbox = gtk.ComboBox()
 			cell = gtk.CellRendererText()
-			self.provbox.pack_start(cell)
+			self.provbox.pack_start(cell,True)
 			self.provbox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.provbox)
+			hbox.pack_start(self.provbox,True,True,True)
 			self.provbox.set_wrap_width(1) 
 			self.provbox.connect('changed', self.eventDataChangedProvbox)
 
 			#cities
 			self.citybox = gtk.ComboBox()
 			cell = gtk.CellRendererText()
-			self.citybox.pack_start(cell)
+			self.citybox.pack_start(cell,True)
 			self.citybox.add_attribute(cell, 'text', 0)
-			hbox.pack_start(self.citybox)
+			hbox.pack_start(self.citybox,True,True,True)
 			self.citybox.set_wrap_width(2) 
 			self.citybox.connect('changed', self.eventDataChangedCitybox)
 
@@ -5527,7 +5595,7 @@ class mainWindow:
 			self.contbox.set_active(activecont)
 			
 			#add search in database
-			vbox.pack_start(hbox)
+			vbox.pack_start(hbox,True,True,True)
 			hbox=gtk.HBox(False,5)			
 			label=gtk.Label(_("Search City")+":")
 			hbox.pack_start(label,False,False,0)
@@ -5541,7 +5609,7 @@ class mainWindow:
 			hbox.pack_start(self.citysearchbutton,False,False,0)
 			label=gtk.Label("("+_("For example: London, GB")+")")
 			hbox.pack_start(label,False,False,0)
-			vbox.pack_start(hbox)
+			vbox.pack_start(hbox,True,True,True)
 
 		#Year month day entry
 		hbox = gtk.HBox(False,5)
@@ -5633,14 +5701,14 @@ class mainWindow:
 		button = gtk.Button(_('Test'),gtk.STOCK_APPLY)
 		button.connect("clicked", self.eventDataApply)
 		buttonbox.pack_start(button,False,False,0)
-  		#ok button
-  		if edit == False:
+		#ok button
+		if edit == False:
 			button = gtk.Button(stock=gtk.STOCK_OK)
 			button.connect("clicked", self.eventDataSubmit)
-			button.set_flags(gtk.CAN_DEFAULT)
+			button.set_can_default(True)
 			buttonbox.pack_start(button,False,False,0)
 			button.grab_default()
-            
+			
 		#cancel button
 		button = gtk.Button(stock=gtk.STOCK_CANCEL)
 		button.connect("clicked", lambda w: self.window2.destroy())
@@ -5737,7 +5805,7 @@ class mainWindow:
 		self.countrybox.set_model(store)
 		self.countrybox.set_active(activecountry) 
 		return
-      
+	  
 	def eventDataChangedCountrybox(self, combobox):
 		model = combobox.get_model()
 		index = combobox.get_active()
@@ -5767,7 +5835,7 @@ class mainWindow:
 		model = combobox.get_model()
 		index = combobox.get_active()
 
-		self.citylist = gtk.ListStore(str,str,str,str,str,str,str,str)
+		self.citylist = gtk.ListStore(str,float,float,str,str,str,int,str)
 		self.citylist.clear()
 		sql = 'SELECT * FROM geonames WHERE country=? AND admin1=? ORDER BY name ASC'
 		db.gquery(sql,(model[index][1],model[index][2]))
@@ -5784,6 +5852,7 @@ class mainWindow:
 			i+=1
 		db.gclose()
 		for i in range(len(list)):
+			#print(list[i])
 			self.citylist.append(list[i])
 		self.citybox.set_model(self.citylist)
 		self.citybox.set_active(activecity) 
@@ -5814,7 +5883,7 @@ class mainWindow:
 		en = db.getDatabase()
 		for i in range(len(en)):
 			if en[i]["name"] == self.name.get_text():
-				dialog=gtk.Dialog(_('Duplicate'),self.window2,0,(gtk.STOCK_OK, gtk.RESPONSE_DELETE_EVENT))
+				dialog=gtk.Dialog(_('Duplicate'),self.window2,0,(gtk.STOCK_OK, gtk.ResponseType.DELETE_EVENT))
 				dialog.set_icon_from_file(cfg.iconWindow)			
 				dialog.connect("response", lambda w,e: dialog.destroy())				
 				dialog.connect("close", lambda w,e: dialog.destroy())
@@ -5822,7 +5891,7 @@ class mainWindow:
 				dialog.show_all()				
 				return
 		#ask for confirmation
-		dialog=gtk.Dialog(_('Question'),self.window2,gtk.DIALOG_DESTROY_WITH_PARENT,(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+		dialog=gtk.Dialog(_('Question'),self.window2,gtk.DialogFlags.DESTROY_WITH_PARENT,(gtk.STOCK_CANCEL, gtk.ResponseType.REJECT, gtk.STOCK_OK, gtk.ResponseType.ACCEPT))
 		dialog.set_icon_from_file(cfg.iconWindow)
 		dialog.connect("close", lambda w,e: dialog.destroy())
 		dialog.connect("response",self.eventDataSave)
@@ -5831,7 +5900,7 @@ class mainWindow:
 		return	
 	
 	def eventDataSave(self, widget, response_id):
-		if response_id == gtk.RESPONSE_ACCEPT:
+		if response_id == gtk.ResponseType.ACCEPT:
 			#update chart data
 			self.updateChartData()
 			#set query to save
@@ -5897,34 +5966,32 @@ class mainWindow:
 class drawSVG(gtk.DrawingArea):
 	def __init__(self):
 		super(drawSVG, self).__init__()
-		self.connect("expose_event", self.exposeEvent)
+		self.svg = rsvg.Handle()
+		self.connect("draw", self.drawMe)
 
 	def setSVG(self,svg):
-		self.svg = rsvg.Handle(svg)
-		self.emit("expose-event",gtk.gdk.Event(gtk.gdk.EXPOSE))
-		width=self.svg.props.width*openAstro.zoom
-		height=self.svg.props.height*openAstro.zoom
+		self.svg = rsvg.Handle.new_from_file(svg)
+		width = self.svg.props.width*openAstro.zoom
+		height = self.svg.props.height*openAstro.zoom
 		self.set_size_request(int(width),int(height))
 		dprint('drawSVG.setSVG file %s' % (svg))
 
-	def exposeEvent(self,widget,event):
-		try:
-			context = self.window.cairo_create()
-		except AttributeError:
-			return True
-
+	def drawMe(self, widget, cr):
 		if self.svg != None:
-
-			#set a clip region for the expose event
-			context.rectangle(event.area.x, event.area.y,event.area.width, event.area.height)
-			context.clip()
-				
-			self.svg.render_cairo(context)
+			dprint("Trying to render svg now.")
+			#dprint(self.svg.get_base_uri())
+			#target=cr.get_target()
+			#cr.set_source_rgb(1.0, 1.0, 1.0)
+			#cr.paint()
+			suc = self.svg.render_cairo(cr)
+			#print(dir(cr))
+			dprint("Drawing succeeded? {}".format(suc))
+			return False
 
 #debug print function
-def dprint(str):
+def dprint(s):
 	if "--debug" in sys.argv or DEBUG:
-		print '%s' % str
+		print(('{}'.format(s)))
 
 #start the whole bunch
 if __name__ == "__main__":

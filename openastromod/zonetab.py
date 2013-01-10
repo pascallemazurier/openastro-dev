@@ -9,6 +9,15 @@ see http://www.twinsun.com/tz/tz-link.htm ,
 import re, struct, math
 from datetime import datetime
 from dateutil.tz import tzfile
+from dateutil import zoneinfo
+from os import path
+import sys
+
+def get_zonetab(p):
+	if path.exists(p):
+		return p
+	else:
+		return path.join(sys.path[0],'zone.tab')
 
 def nearest_tz(lat, lon, zones):
     """
@@ -39,14 +48,14 @@ def distance(lat_1, long_1, lat_2, long_2):
     # Submitter: Kevin Ryan (other recipes)
     # Last Updated: 2006/04/25 
     lat_1, long_1, lat_2, long_2 = [ v * math.pi / 180.0
-                                     for v in lat_1, long_1, lat_2, long_2]
+                                     for v in (lat_1, long_1, lat_2, long_2)]
     dlong = long_2 - long_1
     dlat = lat_2 - lat_1
     a = (math.sin(dlat / 2))**2 + math.cos(lat_1) * math.cos(lat_2) \
         * (math.sin(dlong / 2))**2
     return 2 * math.asin(min(1, math.sqrt(a)))
         
-def timezones(zonetab="/usr/share/zoneinfo/zone.tab",
+def timezones(zonetab=get_zonetab("/usr/share/zoneinfo/zone.tab"),
               exclude=[]):
     """iterate over timezones in zone.tab; yield (country, (lat, lon), name)
 
@@ -54,7 +63,7 @@ def timezones(zonetab="/usr/share/zoneinfo/zone.tab",
     @param exclude: exclude timezones with these strings in the name,
                     e.g. convexity exceptions like Indiana
     """
-    for line in file(zonetab):
+    for line in open(zonetab):
         if line.startswith("#"): continue
         values = line.split()
         if len(values) >= 3:
@@ -66,16 +75,14 @@ def timezones(zonetab="/usr/share/zoneinfo/zone.tab",
                 yield country, latlong(coords), tz
 
 
-def stdtime(tz, year, month, day, hour, min, sec ,
-	    zoneinfo="/usr/share/zoneinfo"
-	    ):
+def stdtime(tz, year, month, day, hour, min, sec):
     """Use /usr/share/zoneinfo to interpret a time in a timezone.
     
     >>> stdtime("America/Chicago", "2007-04-02T21:53:27")
     '2007-04-02T21:53:27-05:00'
     """
     return datetime(year, month, day, hour, min, sec,
-                    tzinfo=tzfile("%s/%s" % (zoneinfo, tz))
+                    tzinfo=zoneinfo.gettz("%s" % (tz))
                     )
     
 
@@ -91,7 +98,7 @@ def latlong(coords):
     """
     m = re.search(r'([^\d])(\d+)([^\d])(\d+)', coords)
     if not m:
-        raise ValueError, coords
+        raise ValueError(coords)
     return coord(m.group(1), m.group(2)), coord(m.group(3), m.group(4))
 
 def coord(sign, digits):
@@ -115,7 +122,7 @@ def coord(sign, digits):
     elif len(digits) == 7:
         d, m, s = int(digits[:3]), int(digits[3:5]), int(digits[5:])
     else:
-        raise RuntimeError, "not implemented", digits
+        raise RuntimeError("not implemented").with_traceback(digits)
 
     if sign == '+': kludge = 'N'
     else: kludge = 'S'
